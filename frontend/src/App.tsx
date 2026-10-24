@@ -1,3 +1,4 @@
+import { Notifications } from '@/components/notifications';
 import { useEffect } from 'react';
 import { BrowserRouter, Navigate, Routes, Route, useParams, useLocation } from 'react-router-dom';
 import { LandingPage } from '@/components/landing-page';
@@ -21,4 +22,4 @@ function AppContent() {
   if (MOCK_MODE && !isDemoAccessGranted()) return <Navigate to="/login" state={{ from: pathname }} replace />;
   return <Shell><Routes><Route path="/dashboard" element={<DashboardPage />} /><Route path="/enviar" element={<><DashboardPage /><UploadPage /></>} /><Route path="/lotes" element={<LotsPage />} /><Route path="/lote/:id" element={<ResultRoute />} /><Route path="/perfil" element={<ProfilePage />} /><Route path="/regras" element={<Navigate to="/perfil" replace />} /><Route path="/gestor" element={<ManagerPage />} /><Route path="/login" element={<Navigate to="/dashboard" replace />} /><Route path="*" element={<main className="container page-content"><PageHeader title="Página não encontrada" description="Não encontramos o endereço que você abriu." /><div className="empty-state"><Link href="/dashboard" className="button button-primary">Voltar ao início</Link></div></main>} /></Routes></Shell>;
 }
-export default function App() { return <BrowserRouter><RouteScroll /><AppContent /></BrowserRouter>; }
+export default function App() { return <BrowserRouter><RouteScroll /><AppContent /><Notifications /></BrowserRouter>; }
