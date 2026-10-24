@@ -41,6 +41,9 @@ func (e *ErroArquivo) Error() string { return e.Codigo + ": " + e.Mensagem }
 
 const intervaloProgresso = 10000
 
+// valorMaximoCentavos limita uma nota a R$ 9.999.999.999,99: mantém as somas de 500 mil notas longe do estouro de int64.
+const valorMaximoCentavos = 999_999_999_999
+
 // Ler interpreta o CSV inteiro. aoAvancar (opcional) recebe o total de linhas lidas a cada 10.000 e no fim.
 func Ler(r io.Reader, aoAvancar func(lidas int)) ([]dominio.Nota, error) {
 	cr := novoLeitorCSV(r)
@@ -216,6 +219,9 @@ func interpretar(rec []string, idx map[string]int, linha int) dominio.Nota {
 	centavos, ok := parseValor(valor)
 	if !ok {
 		return falhar("VALOR_NOMINAL", valor, "não é um valor válido (use 1234,56)")
+	}
+	if centavos > valorMaximoCentavos {
+		return falhar("VALOR_NOMINAL", valor, "é maior que o limite aceito (R$ 9.999.999.999,99)")
 	}
 	if centavos <= 0 {
 		return falhar("VALOR_NOMINAL", valor, "precisa ser maior que zero")

@@ -223,3 +223,14 @@ func BenchmarkLer500k(b *testing.B) {
 		}
 	}
 }
+
+func TestLerValorAbsurdo(t *testing.T) {
+	notas := ler(t, cab+"\n"+linha("A", "12345678901,00", "07/10/2026", ""))
+	e := notas[0].ErroFormato
+	if e == nil || e.Campo != "VALOR_NOMINAL" || e.Problema != "é maior que o limite aceito (R$ 9.999.999.999,99)" {
+		t.Fatalf("erro: %+v", e)
+	}
+	if n := ler(t, cab+"\n"+linha("A", "9.999.999.999,99", "07/10/2026", ""))[0]; n.ErroFormato != nil || n.ValorCentavos != 999_999_999_999 {
+		t.Fatalf("limite exato: %+v", n)
+	}
+}

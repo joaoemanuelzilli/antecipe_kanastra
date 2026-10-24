@@ -2,6 +2,7 @@ package motor
 
 import (
 	"math"
+	"math/bits"
 	"sort"
 
 	"antecipe/internal/documento"
@@ -79,7 +80,7 @@ func Concentrar(cands []*dominio.Resultado, r regras.Regras, est EstoqueFundo) [
 			face := rs.Nota.ValorCentavos
 			num := base[g] + aceitoGrupo[g] + face
 			den := est.TotalCentavos + aceitoTotal + face
-			if num*10000 > limiteBP*den {
+			if excede(num, den, limiteBP) {
 				rs.Recusas = append(rs.Recusas, dominio.Recusa{Codigo: v.Codigo, Dados: map[string]any{
 					"percentual_resultante": math.Round(float64(num)*10000/float64(den)) / 100,
 					"limite":                limite,
@@ -93,4 +94,14 @@ func Concentrar(cands []*dominio.Resultado, r regras.Regras, est EstoqueFundo) [
 		}
 	}
 	return erros
+}
+
+// excede compara num/den > limiteBP/10000 em 128 bits: sem estouro mesmo com valores enormes.
+func excede(num, den, limiteBP int64) bool {
+	if num < 0 || den <= 0 || limiteBP < 0 {
+		return true // entrada impossível: falha fechada (recusa)
+	}
+	ah, al := bits.Mul64(uint64(num), 10000)
+	bh, bl := bits.Mul64(uint64(limiteBP), uint64(den))
+	return ah > bh || (ah == bh && al > bl)
 }

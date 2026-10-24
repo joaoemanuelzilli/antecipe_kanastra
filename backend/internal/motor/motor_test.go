@@ -150,8 +150,14 @@ func TestDuplicadaNoArquivo(t *testing.T) {
 }
 
 func TestParcelasNaoSaoDuplicadas(t *testing.T) {
-	a := nota(2, func(n *dominio.Nota) { n.Numero = "1-767495"; n.Vencimento = time.Date(2026, 11, 15, 0, 0, 0, 0, time.UTC) })
-	b := nota(3, func(n *dominio.Nota) { n.Numero = "1-767495"; n.Vencimento = time.Date(2026, 12, 15, 0, 0, 0, 0, time.UTC) })
+	a := nota(2, func(n *dominio.Nota) {
+		n.Numero = "1-767495"
+		n.Vencimento = time.Date(2026, 11, 15, 0, 0, 0, 0, time.UTC)
+	})
+	b := nota(3, func(n *dominio.Nota) {
+		n.Numero = "1-767495"
+		n.Vencimento = time.Date(2026, 12, 15, 0, 0, 0, 0, time.UTC)
+	})
 	s := Validar([]dominio.Nota{a, b}, regrasOriginais(t), contexto(t))
 	for _, r := range s.Resultados {
 		if r.Status != dominio.Aprovada {
@@ -178,9 +184,21 @@ func contextoConcentracao(t *testing.T, grupo int64) Contexto {
 
 func TestConcentracaoDeterministica(t *testing.T) {
 	base := []dominio.Nota{
-		nota(2, func(n *dominio.Nota) { n.Numero = "A"; n.ValorCentavos = 500_000; n.Vencimento = dataBase.AddDate(0, 0, 10) }),
-		nota(3, func(n *dominio.Nota) { n.Numero = "B"; n.ValorCentavos = 500_000; n.Vencimento = dataBase.AddDate(0, 0, 20) }),
-		nota(4, func(n *dominio.Nota) { n.Numero = "C"; n.ValorCentavos = 500_000; n.Vencimento = dataBase.AddDate(0, 0, 30) }),
+		nota(2, func(n *dominio.Nota) {
+			n.Numero = "A"
+			n.ValorCentavos = 500_000
+			n.Vencimento = dataBase.AddDate(0, 0, 10)
+		}),
+		nota(3, func(n *dominio.Nota) {
+			n.Numero = "B"
+			n.ValorCentavos = 500_000
+			n.Vencimento = dataBase.AddDate(0, 0, 20)
+		}),
+		nota(4, func(n *dominio.Nota) {
+			n.Numero = "C"
+			n.ValorCentavos = 500_000
+			n.Vencimento = dataBase.AddDate(0, 0, 30)
+		}),
 	}
 	ordens := [][]int{{0, 1, 2}, {2, 1, 0}, {1, 2, 0}, {2, 0, 1}, {1, 0, 2}}
 	for _, ordem := range ordens {
@@ -296,4 +314,28 @@ func padNum(n, largura int) string {
 		s = append([]byte{'0'}, s...)
 	}
 	return string(s)
+}
+
+func TestChaveCanonica(t *testing.T) {
+	base := nota(2, func(n *dominio.Nota) { n.Numero = "351153" })
+	for _, num := range []string{"000351153", " 351153 ", "351.153", "351-153"} {
+		outra := nota(2, func(n *dominio.Nota) { n.Numero = num })
+		if Chave(&outra) != Chave(&base) {
+			t.Errorf("Chave(%q) = %q, esperado %q", num, Chave(&outra), Chave(&base))
+		}
+	}
+	a := nota(2, func(n *dominio.Nota) { n.Numero = "nc-051691" })
+	b := nota(2, func(n *dominio.Nota) { n.Numero = "NC-051691" })
+	if Chave(&a) != Chave(&b) {
+		t.Error("número em minúsculas deveria gerar a mesma chave")
+	}
+}
+
+func TestConcentracaoSemOverflow(t *testing.T) {
+	c := contexto(t)
+	c.Estoque = EstoqueFundo{TotalCentavos: 10_000_000_000_000_000, PorSacado: map[string]int64{}, PorCedente: map[string]int64{}}
+	r := Validar([]dominio.Nota{nota(2, func(n *dominio.Nota) { n.ValorCentavos = 999_999_999_999 })}, regrasOriginais(t), c).Resultados[0]
+	if r.Status != dominio.Aprovada {
+		t.Fatalf("nota de participação ínfima recusada: %v", codigos(r))
+	}
 }

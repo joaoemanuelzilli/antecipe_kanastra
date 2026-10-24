@@ -70,8 +70,29 @@ const (
 )
 
 // Chave identifica a nota para duplicidade: cedente + número + vencimento (o valor fica de fora de propósito).
+// O número é canonizado (maiúsculas, só letras e dígitos, sem zeros à esquerda) para que
+// "000351153", "351.153" e "351153" não escapem da detecção. Na dúvida, é melhor recusar como
+// duplicata do que vender a mesma nota duas vezes.
 func Chave(n *dominio.Nota) string {
-	return documento.Normalizar(n.DocCedente) + "|" + strings.TrimSpace(n.Numero) + "|" + n.Vencimento.Format(iso)
+	return documento.Normalizar(n.DocCedente) + "|" + NumeroCanonico(n.Numero) + "|" + n.Vencimento.Format(iso)
+}
+
+// NumeroCanonico normaliza o número da nota para a chave de duplicidade.
+func NumeroCanonico(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range strings.ToUpper(s) {
+		if (r >= '0' && r <= '9') || (r >= 'A' && r <= 'Z') {
+			if b.Len() == 0 && r == '0' {
+				continue
+			}
+			b.WriteRune(r)
+		}
+	}
+	if b.Len() == 0 && strings.ContainsRune(s, '0') {
+		return "0"
+	}
+	return b.String()
 }
 
 // Dias corridos entre a data-base e o vencimento.
