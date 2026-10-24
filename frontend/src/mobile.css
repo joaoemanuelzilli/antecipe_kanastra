@@ -64,3 +64,14 @@
 
 .mobile-app-header{display:none}
 @media(max-width:760px){.mobile-app-header{display:flex;position:fixed;inset:0 0 auto;align-items:center;height:calc(64px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 20px 0;background:#fff;border-bottom:1px solid #e6ece8;z-index:45}.mobile-app-header>a{display:inline-flex;align-items:center;min-height:44px}.mobile-app-header img{display:block;width:148px;height:24px;object-fit:contain}.app-workspace{padding-top:calc(64px + env(safe-area-inset-top))}html{scroll-padding-top:calc(84px + env(safe-area-inset-top))}}
+
+@media(max-width:760px){
+  .result-page .note-card{padding:18px 20px;position:relative}
+  .result-page .note-card-heading{margin-bottom:8px;gap:12px}.result-page .note-card-heading>strong{font-size:14px;font-weight:600;line-height:1.5}.result-page .note-card .status-badge{font-size:10px;padding:4px 8px;white-space:nowrap}
+  .result-page .note-card-company{font-size:13px;font-weight:400;line-height:1.6;margin:0;padding-right:0;color:#51655a}
+  .result-page .note-card-doc{display:none}
+  .result-page .note-card-values{margin-top:14px;gap:16px}.result-page .note-card-values span{font-size:11px;line-height:1.5}.result-page .note-card-values strong{font-size:18px;font-weight:600;line-height:1.4;margin-top:3px}
+  .result-page .note-card-recusada .note-card-values{grid-template-columns:1fr}.result-page .note-card-recusada .note-card-values>div{text-align:left}
+  .result-page .note-card-discount{font-size:11px;margin-top:6px;line-height:1.5}
+  .result-page .note-card-footer{margin-top:10px;gap:12px;min-height:44px}.result-page .note-card-footer>span{font-size:11px;line-height:1.6}.result-page .note-card-footer .detail-button{font-size:12px;min-height:44px;flex-shrink:0}
+}
