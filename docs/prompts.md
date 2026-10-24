@@ -333,3 +333,27 @@ A correção 3 (separar as conversas por usuário) não foi aplicada, porque nã
 
 **O que o time fez com a resposta:** _(preencher)_
 
+---
+
+## #12 · 24/10/2026 ~14:40 · Onde fazer deploy de graça e custo na Railway
+
+**Prompt (time → Claude Code):**
+
+> onde podemos fazer deplo disso de forma gratuita, e qual seria o custo na railway
+
+**O que a IA fez:**
+
+1. **Pesquisou preços e planos gratuitos atuais** (WebSearch e a página oficial da Railway, por subagente web-fetch). Railway:
+   - Free Trial: US$ 5 uma vez, 30 dias, sem cartão, até 1 GB e 2 vCPU por serviço;
+   - Free: US$ 1/mês e 0,5 GB por serviço;
+   - Hobby: US$ 5/mês com US$ 5 de uso incluídos;
+   - uso: cerca de US$ 10 por GB de RAM/mês, US$ 20 por vCPU/mês e US$ 0,15 por GB de volume/mês.
+2. **Mediu o consumo real no Docker:**
+   - parado, cerca de 0,2 GB de RAM somando assistente, banco, front e API;
+   - pico de 711 MB na API durante um lote de 500 mil linhas;
+   - banco com 217 MB.
+3. **Estimou o custo na Railway:** cerca de US$ 3 a 5 de uso por mês, coberto pelo Hobby (US$ 5/mês). O Free Trial cobre o hackathon de graça, e o plano Free (0,5 GB) não aguenta o pico da API.
+4. **Comparou as opções gratuitas:** Railway Trial, Oracle Always Free, notebook com Cloudflare Tunnel, Render e outras.
+
+**O que o time fez com a resposta:** _(preencher)_
+
