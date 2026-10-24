@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { MOCK_MODE } from '@/api/client';
+import { clearGestorSenha, MOCK_MODE } from '@/api/client';
 import { Modal } from './ui/dialog';
 import { Button } from './ui/button';
 import './demo-login.css';
@@ -14,6 +14,7 @@ export function isDemoAccessGranted(): boolean {
 }
 
 export function clearDemoAccess(): void {
+  clearGestorSenha();
   try { sessionStorage.removeItem(DEMO_ACCESS_KEY); }
   catch { /* An unavailable session store already means access is not granted. */ }
 }
@@ -21,7 +22,7 @@ export function clearDemoAccess(): void {
 export function DemoLoginPage({ onEnter }: { onEnter?: () => void } = {}) {
   const navigate = useNavigate();
   const location = useLocation();
-  const destination = ['/dashboard', '/enviar', '/regras', '/lotes', '/gestor'].includes(location.state?.from) ? location.state.from as string : '/dashboard';
+  const destination = ['/dashboard', '/enviar', '/perfil', '/regras', '/lotes', '/gestor'].includes(location.state?.from) ? location.state.from as string : '/dashboard';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);

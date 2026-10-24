@@ -1,0 +1,9 @@
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import './pagination.css';
+
+export function Pagination({ page, totalPages, disabled, onPageChange }: { page: number; totalPages: number; disabled?: boolean; onPageChange: (page: number) => void }) {
+  const [target, setTarget] = useState('');
+  const pages = [...new Set([1, page - 1, page, page + 1, totalPages])].filter(value => value >= 1 && value <= totalPages).sort((a, b) => a - b);
+  return <nav className="result-pagination" aria-label="Paginação"><div className="pagination-pages"><button disabled={disabled || page <= 1} onClick={() => onPageChange(page - 1)} aria-label="Página anterior"><ChevronLeft size={17} /></button>{pages.map((value, index) => <span className="pagination-slot" key={value}>{index > 0 && value - pages[index - 1] > 1 ? <span className="pagination-ellipsis" aria-hidden="true">…</span> : null}<button className={page === value ? 'selected' : ''} disabled={disabled} aria-label={`Página ${value}`} aria-current={page === value ? 'page' : undefined} onClick={() => onPageChange(value)}>{value.toLocaleString('pt-BR')}</button></span>)}<button disabled={disabled || page >= totalPages} onClick={() => onPageChange(page + 1)} aria-label="Próxima página"><ChevronRight size={17} /></button></div>{totalPages > 1 ? <form className="pagination-jump" onSubmit={event => { event.preventDefault(); const value = Number(target); if (!disabled && Number.isInteger(value) && value >= 1 && value <= totalPages) { onPageChange(value); setTarget(''); } }}><label>Ir para página<input type="number" inputMode="numeric" min={1} max={totalPages} required value={target} disabled={disabled} onChange={event => setTarget(event.target.value)} aria-label="Ir para página" placeholder={String(page)} /></label><span>de {totalPages.toLocaleString('pt-BR')}</span><button disabled={disabled || !target} type="submit">Ir</button></form> : null}</nav>;
+}

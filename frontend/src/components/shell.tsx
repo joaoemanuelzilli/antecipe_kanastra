@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { RoleTransition } from './role-transition';
 import Link from '@/lib/link';
+import { Settings2, UserRound } from 'lucide-react';
+import { useDemoProfile } from '@/lib/demo-profile';
 import { usePathname } from '@/lib/router';
 import { cx } from '@/lib/format';
-import { MOCK_MODE } from '@/api/client';
-import { Modal } from './ui/dialog';
+import { MOCK_MODE, setGestorSenha } from '@/api/client';
+import './compact-rail.css';
+import { AssistantChat } from './assistant-chat';
 import { clearDemoAccess } from './demo-login-page';
 
 export function Brand() {
@@ -11,18 +16,34 @@ export function Brand() {
 }
 export function RoleSwitch() {
   const manager = usePathname() === '/gestor';
-  return <nav className="role-switch" aria-label="Perfil de acesso"><Link href="/dashboard" className={cx(!manager && 'selected')} aria-current={!manager ? 'page' : undefined}>Usuário</Link><Link href="/gestor" className={cx(manager && 'selected')} aria-current={manager ? 'page' : undefined}>Gestor</Link></nav>;
+  const navigate = useNavigate();
+  const [pending, setPending] = useState<'user' | 'manager' | null>(null);
+  function switchRole(role: 'user' | 'manager') {
+    if (pending || (role === 'manager') === manager) return;
+    setPending(role);
+  }
+  return <><nav className="role-switch" aria-label="Perfil de acesso"><Link href="/dashboard" onClick={event => { event.preventDefault(); switchRole('user'); }} className={cx(!manager && 'selected')} aria-current={!manager ? 'page' : undefined}>Usuário</Link><Link href="/gestor" onClick={event => { event.preventDefault(); switchRole('manager'); }} className={cx(manager && 'selected')} aria-current={manager ? 'page' : undefined}>Gestor</Link></nav>{pending ? <RoleTransition role={pending} onComplete={() => { if (pending === 'manager' && MOCK_MODE) setGestorSenha('demo-gestor'); navigate(pending === 'manager' ? '/gestor' : '/dashboard'); setPending(null); }} /> : null}</>;
 }
+
 function HelpGuide() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [question, setQuestion] = useState('');
+  const [questionRequest, setQuestionRequest] = useState(0);
+  useEffect(() => {
+    const openChat = (event: Event) => { setQuestion((event as CustomEvent<string>).detail || ''); setQuestionRequest(value => value + 1); setOpen(true); };
+    window.addEventListener('antecipe:chat-open', openChat);
+    return () => window.removeEventListener('antecipe:chat-open', openChat);
+  }, []);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { reducedMotion: userReducedMotion } = useDemoProfile();
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const updatePlayback = () => {
-      const shouldPlay = !reducedMotion.matches && !document.hidden && !open;
+      const shouldPlay = !reducedMotion.matches && !userReducedMotion && !document.hidden && !open;
       video.autoplay = shouldPlay;
       if (shouldPlay) {
         void video.play().catch(() => { /* The poster stays visible if autoplay is unavailable. */ });
@@ -38,11 +59,14 @@ function HelpGuide() {
       document.removeEventListener('visibilitychange', updatePlayback);
       video.pause();
     };
-  }, [open]);
+  }, [open, userReducedMotion]);
 
-  return <><button className="mascot-help" onClick={() => setOpen(true)} aria-label="Abrir ajuda sobre a antecipação"><span className="mascot-help-label">Ajuda</span><span className="mascot-help-media" aria-hidden="true"><video ref={videoRef} src="/figma/assistant-head-loop.mp4" poster="/figma/assistant-head-poster.jpg" width="100" height="100" autoPlay muted loop playsInline preload="metadata" tabIndex={-1} /></span></button><Modal open={open} onOpenChange={setOpen} title="Como podemos ajudar?" description="Um guia rápido para acompanhar suas notas."><div className="help-guide"><details open><summary>Como envio minhas notas?</summary><p>Em Novo envio, escolha um arquivo CSV e a data-base. O modelo mostra as colunas esperadas. Você também pode conhecer o fluxo com um lote de exemplo.</p><Link href="/enviar" onClick={() => setOpen(false)} className="text-link">Fazer um novo envio</Link></details><details><summary>O que acontece depois do envio?</summary><p>Acompanhe a fila e as etapas de processamento. O resultado mostra as notas aprovadas e recusadas, os valores e a explicação recebida da análise.</p></details><details><summary>Por que uma nota foi recusada?</summary><p>Abra os detalhes da nota para ver o motivo e o próximo passo. Os filtros ajudam a encontrar notas com o mesmo motivo, e você pode baixar o resultado em CSV.</p></details><details><summary>Quando a cessão é confirmada?</summary><p>Você revisa as notas aprovadas e confirma a cessão no resultado do lote. A confirmação apresenta o valor final e eventuais notas excluídas.</p><Link href="/lotes" onClick={() => setOpen(false)} className="text-link">Consultar meus lotes</Link></details><details><summary>Onde consulto as regras?</summary><p>As regras do fundo e o método de cálculo ficam disponíveis para consulta. O gestor tem uma área própria para revisar e publicar alterações.</p><Link href="/regras" onClick={() => setOpen(false)} className="text-link">Ver regras do fundo</Link></details>{MOCK_MODE && <p className="helper">Você está em uma demonstração com dados fictícios. As confirmações não realizam operações financeiras.</p>}</div></Modal></>;
+  return <><button className="mascot-help" onClick={() => { setQuestion(''); setOpen(true); }} aria-label="Abrir chat com a IA"><span className="mascot-help-label">Fale com a IA</span><span className="mascot-help-media" aria-hidden="true"><video ref={videoRef} src="/figma/assistant-head-loop.mp4" poster="/figma/assistant-head-poster.jpg" width="100" height="100" autoPlay muted loop playsInline preload="metadata" tabIndex={-1} /></span></button><AssistantChat key={`${pathname}:${question}:${questionRequest}`} open={open} onOpenChange={setOpen} initialQuestion={question} /></>;
 }
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  return <div className="figma-app"><aside className="app-rail"><div className="rail-inner"><Brand /><nav className="rail-nav" aria-label="Navegação principal"><Link href="/dashboard" className={cx('rail-link', (pathname === '/dashboard' || pathname === '/enviar') && 'active')} aria-label="Dashboard" aria-current={pathname === '/dashboard' ? 'page' : undefined} title="Dashboard"><img src="/figma/house.svg" width="24" height="24" alt="" /></Link><Link href="/lotes" className={cx('rail-link', (pathname === '/lotes' || pathname.startsWith('/lote/')) && 'active')} aria-label="Meus lotes" aria-current={pathname === '/lotes' ? 'page' : undefined} title="Meus lotes"><img src="/figma/file-text.svg" width="24" height="24" alt="" /></Link></nav><Link href="/regras" className={cx('rail-link', (pathname === '/regras' || pathname === '/gestor') && 'active')} aria-label="Regras do fundo" aria-current={pathname === '/regras' ? 'page' : undefined} title="Regras do fundo"><img src="/figma/sliders.svg" width="24" height="24" alt="" /></Link></div></aside><div className="app-workspace">{children}<footer className="app-environment">{MOCK_MODE ? <>Demonstração · Dados fictícios <Link href="/login" onClick={clearDemoAccess}>Sair da demonstração</Link></> : 'Antecipe · Antecipação com clareza'}</footer></div><HelpGuide /></div>;
+  const { reducedMotion } = useDemoProfile();
+  useEffect(() => { document.documentElement.dataset.profileReducedMotion = String(reducedMotion); return () => { delete document.documentElement.dataset.profileReducedMotion; }; }, [reducedMotion]);
+  const manager = pathname === '/gestor';
+  return <div className="figma-app"><header className="mobile-app-header"><Link href="/dashboard" aria-label="Antecipe, início"><img src="/figma/landing/logo.svg" width="148" height="24" alt="Antecipe" /></Link></header><aside className="app-rail"><div className="rail-inner"><Brand />{manager ? <nav className="rail-nav" aria-label="Navegação do gestor"><Link href="/gestor" className="rail-link active" aria-label="Configuração do fundo" aria-current="page" title="Configuração do fundo"><Settings2 size={24} strokeWidth={1.5} aria-hidden="true" /><span className="rail-label">Configuração</span></Link></nav> : <><nav className="rail-nav" aria-label="Navegação principal"><Link href="/dashboard" className={cx('rail-link', (pathname === '/dashboard' || pathname === '/enviar') && 'active')} aria-label="Dashboard" aria-current={pathname === '/dashboard' ? 'page' : undefined} title="Dashboard"><img src="/figma/house.svg" width="24" height="24" alt="" /><span className="rail-label">Início</span></Link><Link href="/lotes" className={cx('rail-link', (pathname === '/lotes' || pathname.startsWith('/lote/')) && 'active')} aria-label="Meus lotes" aria-current={pathname === '/lotes' ? 'page' : undefined} title="Meus lotes"><img src="/figma/file-text.svg" width="24" height="24" alt="" /><span className="rail-label">Lotes</span></Link></nav><Link href="/perfil" className={cx('rail-link', pathname === '/perfil' && 'active')} aria-label="Meu perfil" aria-current={pathname === '/perfil' ? 'page' : undefined} title="Meu perfil"><UserRound size={24} strokeWidth={1.5} aria-hidden="true" /><span className="rail-label">Perfil</span></Link></>}</div></aside><div className="app-workspace">{children}<footer className="app-environment">{MOCK_MODE ? <>Demonstração · Dados fictícios <Link href="/login" onClick={clearDemoAccess}>Sair da demonstração</Link></> : 'Antecipe · Antecipação com clareza'}</footer></div><HelpGuide /></div>;
 }

@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useRef, useState, type AnchorHTMLAttributes, type MouseEvent } from 'react';
+import { notify } from './notifications';
 import { MOCK_MODE } from '@/api/client';
 
 function downloadFilename(response: Response, href: string): string {
@@ -59,7 +60,7 @@ export const ApiDownloadLink = forwardRef<HTMLAnchorElement, ApiDownloadLinkProp
     inFlight.current = true;
     setBusy(true); onDownloadError('');
     controller.current = new AbortController();
-    try { await downloadApiBlob(href, controller.current.signal); }
+    try { await downloadApiBlob(href, controller.current.signal); notify.success('Arquivo pronto', 'O download foi enviado ao navegador.'); }
     catch (cause) {
       if (!(cause instanceof Error && cause.name === 'AbortError')) onDownloadError(cause instanceof Error ? cause.message : 'Não foi possível baixar o arquivo. Tente novamente.');
     } finally {

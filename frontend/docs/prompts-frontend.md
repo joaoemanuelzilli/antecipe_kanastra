@@ -151,3 +151,10 @@ Validação:53testes, TypeScript/lint e builds normal/demo. Preview mock isolada
 Pedido do usuário: “Sobe para o repositorio.. os meninos precisam testar la”. Snapshot completo, incluindo a landing final, reaplicado sobre a main e5592fe. A conta conectada tem somente leitura no upstream; preparada contribuição pelo fork matteuszu/antecipe_kanastra e pull request ao grupo, sem merge/deploy.
 
 Preservados backend, contrato e template nginx atuais. Build React incorporado ao Dockerfile existente e placeholder removido. Corrigido suporte aos parâmetros opcionais do catálogo v1.4. Instalação limpa no clone,65testes, TypeScript, lint e builds normal/demo aprovados; Docker e Go não executados nesta rodada. Guia de teste no README.
+
+
+## Perfil do usuário
+
+Pedido: usuário não vê regras; criar perfil, logout e troca de senha seguindo o visual existente. Implementado Meu perfil com identidade fictícia, formulário nome/e-mail/empresa/cargo, preferências e sessão. A troca de senha é explicitamente demonstrativa, sem gravação nem envio de credenciais. O logout limpa o acesso demo e a senha do gestor. Regras ficam na gestão; a rota antiga redireciona para perfil.
+
+Verificados salvamento após reload, efeitos reais da redução de animações, erro e sucesso da simulação de senha, logout/reentrada, mobile360px e rota antiga.69testes aprovados; verificação de tipos/lint/build. Atualização da mesma branch/PR de testes autorizado anteriormente.

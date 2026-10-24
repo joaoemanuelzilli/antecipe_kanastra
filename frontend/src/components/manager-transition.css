@@ -1,0 +1,13 @@
+.role-transition-overlay{position:fixed;inset:0;z-index:1000;background:#f5f7f5;animation:role-cover 180ms ease-out both}
+.manager-transition{position:fixed;inset:0;z-index:1001;display:grid;place-items:center;overflow:hidden;outline:none}
+.manager-transition-copy{position:relative;text-align:center;color:#203e2e;padding:24px;width:min(100%,440px);animation:role-content 260ms ease-out both}
+.manager-transition-copy h2{font-size:28px;font-weight:600;margin:0 0 12px;letter-spacing:-.6px;line-height:1.3}
+.manager-transition-copy p{font-size:14px;color:#5d7063;margin:0;line-height:1.7}
+.role-transition-bot{display:block;width:291px;height:163px;max-width:100%;object-fit:contain;margin:0 auto 24px}
+.manager-transition-progress{display:block;width:120px;height:3px;border-radius:8px;background:#dce9e0;margin:28px auto 0;overflow:hidden}
+.manager-transition-progress span{display:block;height:100%;background:#00864c;border-radius:inherit;transform-origin:left;animation:role-progress 1500ms linear both}
+@keyframes role-cover{from{opacity:0}to{opacity:1}}
+@keyframes role-content{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes role-progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media(prefers-reduced-motion:reduce){.role-transition-overlay,.manager-transition-copy,.manager-transition-progress span{animation:none}}
+:root[data-profile-reduced-motion=true] .role-transition-overlay,:root[data-profile-reduced-motion=true] .manager-transition-copy,:root[data-profile-reduced-motion=true] .manager-transition-progress span{animation:none}
