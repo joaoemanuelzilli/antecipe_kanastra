@@ -11,3 +11,13 @@
 
 @media(min-width:701px){.result-page .confirmation-inner{padding-right:144px}}
 @media(max-width:700px){.result-page .confirmation-bar{padding-bottom:100px}.result-page .note-card-values span{font-size:12px}.result-page .note-card-doc,.result-page .note-card-discount{font-size:12px}}
+
+.result-page .note-status-tabs{display:flex;gap:8px;flex:1 0 100%;border-bottom:1px solid #e8ede9;padding-bottom:16px}
+.result-page .note-status-tabs button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;border:0;border-radius:14px;background:transparent;color:#536158;font-size:13px;font-weight:500;line-height:1.4}
+.result-page .note-status-tabs button:hover{background:#f1f6f2;color:#004639}
+.result-page .note-status-tabs button.selected{background:#004639;color:white}
+.result-page .note-status-tabs button>span{padding:2px 7px;border-radius:8px;background:#eff2ef;font-size:11px;font-variant-numeric:tabular-nums;color:#354d3f}
+.result-page .note-status-tabs button.selected>span{background:#286759;color:#fff}
+.result-page .notes-toolbar .search-field{margin:0;min-width:180px}.result-page .notes-toolbar>.button{margin-left:auto}
+.result-page .notes-table tbody tr:nth-child(even){background:#fafcfb}.result-page .notes-table tbody tr:hover{background:#eff9f3}.result-page .notes-table td:nth-child(2){font-weight:500;color:#193c2b}.result-page .notes-table td.numeric{font-variant-numeric:tabular-nums;white-space:nowrap}.result-page .notes-table td.cell-company{max-width:240px;min-width:160px;white-space:normal;line-height:1.6}.result-page .notes-page-label{font-size:13px;white-space:nowrap;color:#536158;padding:0 10px}.result-page .pagination .button{min-width:44px;min-height:44px;height:44px;border-radius:14px}
+@media(max-width:700px){.result-page .note-status-tabs{order:1;gap:4px;padding-bottom:12px}.result-page .note-status-tabs button{flex:1;padding:10px 6px;font-size:12px;gap:5px}.result-page .note-status-tabs button>span{padding:2px 5px;font-size:10px}.result-page .table-footer{flex-direction:column;align-items:stretch;gap:16px}.result-page .pagination{justify-content:space-between}.result-page .notes-toolbar .search-field{min-width:0}}
