@@ -4,7 +4,7 @@
 .theme-toggle:hover{background:var(--blue-soft);box-shadow:0 4px 20px #003b2918;transform:translateY(-2px)}
 .theme-toggle:active{transform:scale(.92)}
 .theme-toggle-icons{position:relative;display:block;width:22px;height:22px}
-.theme-toggle-icons svg{position:absolute;inset:0;transition:transform .45s cubic-bezier(.34,1.56,.64,1),opacity .25s}
+.theme-toggle-icons svg{position:absolute;inset:0;transition:transform .45s cubic-bezier(.22,1,.36,1),opacity .25s}
 .theme-sun{opacity:1;transform:rotate(0) scale(1)}
 .theme-moon{opacity:0;transform:rotate(-90deg) scale(.4)}
 .theme-toggle[data-dark=true]{color:#a6efc8}
@@ -89,3 +89,58 @@ html[data-theme=dark]:not(:has(.demo-login-page)) .result-pagination button.sele
 html[data-theme=dark]:not(:has(.demo-login-page)) .pagination-jump>button{background:var(--blue-soft);color:var(--blue)}
 html[data-theme=dark]:not(:has(.demo-login-page)) :is(.pagination-jump,.pagination-ellipsis,.result-page .notes-page-label){color:var(--muted)}
 html[data-theme=dark]:not(:has(.demo-login-page)) .pagination-jump input:focus{outline-color:#497c60;border-color:var(--blue)}
+
+/* Shared portal surfaces: dialogs render outside the page container. */
+:root[data-theme=dark]:not(:has(.demo-login-page)) {
+  --surface-raised:#132019;
+}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.sheet-heading,.assistant-chat-header .icon-button,.sheet-heading .icon-button,.refusal-summary,.assistant-chat-unavailable,.assistant-chart,.assistant-chart-notice){background:var(--surface);color:var(--ink);border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.sheet-body .detail-line,.sheet-body .reason-card .next-action,.sheet-body .reason-card .reason-technical,.assistant-markdown th,.assistant-markdown td,.assistant-markdown hr,.assistant-markdown blockquote){border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.sheet-body .detail-line>span:last-child,.sheet-body .detail-line>strong,.sheet-body .reason-card p,.assistant-markdown,.assistant-markdown strong,.assistant-markdown h3,.assistant-markdown h4,.assistant-markdown td,.assistant-markdown pre code,.assistant-chart figcaption){color:var(--ink)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.sheet-body .reason-heading,.sheet-body .reason-heading h3){color:var(--red)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.sheet-body .reason-card .next-action,.sheet-body .reason-card .reason-technical,.assistant-markdown blockquote,.assistant-markdown :not(pre)>code,.assistant-markdown th,.assistant-markdown tbody tr:nth-child(even)){background:var(--surface-raised);color:var(--ink)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.sheet-body .reason-card .next-action strong,.assistant-markdown a,.assistant-markdown li::marker,.assistant-code-heading button,.assistant-chart summary,.assistant-chart-notice button,.assistant-chat-unavailable button){color:var(--blue)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.sheet-body .reason-card .reason-technical summary,.result-page .summary-label,.assistant-markdown em,.assistant-markdown .footnotes,.assistant-markdown .assistant-chart-source){color:var(--muted)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.assistant-chat-unavailable button,.assistant-chat-form textarea){background:var(--surface);border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .assistant-chat-form textarea{caret-color:var(--blue)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .assistant-chat-form textarea::placeholder{color:var(--muted)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .assistant-chat-form>button:disabled{background:var(--line);color:var(--muted)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.feedback-success,.note-help-button:hover){background:var(--green-soft);color:var(--green);border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .assistant-chart-track{background:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .refusal-summary :is(summary,li button){color:var(--ink);border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .refusal-summary li button>strong{color:var(--red)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .refusal-summary li button:is(:hover,.selected){background:var(--blue-soft)}
+
+/* Keep icons at their authored size in narrow buttons and long messages. */
+:where(.button,.icon-button,.reason-heading,.note-help-button,.assistant-chat-header,.assistant-chat-context,.assistant-suggestions button)>svg{flex-shrink:0}
+.sheet-heading>div{min-width:0}
+.sheet-heading h2{overflow-wrap:anywhere}
+.sheet-heading .icon-button{flex-shrink:0}
+.sheet-body .detail-line>span:first-child{min-width:0}
+.sheet-body .detail-line.total strong{color:var(--blue)}
+.assistant-chat-messages{scrollbar-gutter:stable}
+.assistant-message,.assistant-chart-bars>div>div:first-child>span,.assistant-chart-donut li>span{min-width:0}
+.assistant-chat-form textarea:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.theme-toggle-label{display:none}
+@media(max-width:760px){
+  .rail-footer{position:static;width:auto;display:flex;justify-content:center;z-index:auto}
+  .theme-toggle{display:flex;flex-direction:column;gap:6px;width:100%;height:64px;border-radius:16px;color:#365c45}
+  .theme-toggle-label{display:block;font-size:11px;line-height:15px;font-weight:500}
+  .theme-toggle:hover{transform:none}
+  .theme-toggle-icons{width:24px;height:24px}
+  .theme-toggle-icons svg{width:24px;height:24px}
+  .app-rail .rail-inner{gap:4px;padding-inline:12px}
+}
+
+@media(min-width:761px){.rail-footer{position:absolute;left:0;top:calc(100% + 20px);bottom:auto;width:100%}}
+.assistant-chat-header>img{flex-shrink:0;width:48px;height:48px}
+html[data-theme=dark]:not(:has(.demo-login-page)) .result-page .mobile-notes-options{color:var(--blue);border-color:var(--line)}
+@media(max-width:420px){
+  .result-page .note-status-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
+  .result-page .note-status-tabs button{min-width:0;flex-direction:column;gap:6px;padding:10px 2px}
+}
+@media(min-width:761px) and (max-width:1100px){
+  .result-page .result-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+  .result-page .summary-primary{grid-column:1/-1;border-right:0;border-bottom:1px solid var(--line);padding:0 0 24px;min-width:0}
+  .result-page .summary-secondary{min-width:0}
+}
