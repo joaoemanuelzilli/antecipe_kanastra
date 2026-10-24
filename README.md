@@ -15,35 +15,24 @@ _Notebook com 16 núcleos, Postgres 18. Medido com `make carga`._
 
 ---
 
-## Testar somente a interface com dados fictícios
+## Como rodar (local)
 
-A contribuição do frontend está em publicação na branch `codex/frontend-contract-v1.1` do fork [`matteuszu/antecipe_kanastra`](https://github.com/matteuszu/antecipe_kanastra), para PR a este repositório. A partir de um clone que contenha essa branch, use Node.js >=22.12.0:
+**Pré-requisitos:** Docker 24+ com Docker Compose v2 e `make`. Não precisa de Go, Node nem Python.
 
-```bash
-git switch codex/frontend-contract-v1.1
-cd frontend
-npm ci
-npm run demo
-```
+**1. O `.env`.** Ponha na raiz do repositório o `.env` enviado pelo formulário. Sem ele, o `make up` cria um a partir do `.env.example`, com senhas aleatórias, e só o assistente de IA fica desligado (falta a chave do OpenRouter).
 
-Abra `http://localhost:5173` (ou a porta informada pelo Vite). O arquivo `.env.demo` é versionado: não precisa criar `.env.local`, fornecer segredos ou iniciar Go, Supabase, Docker ou Vercel. Entre com dados fictícios ou use **Explorar demonstração**; a senha pública do gestor mock é `demo-gestor`. Valores, etapas e cessões são simulados, sem movimentação financeira. O mascote desta interface oferece um guia local, sem chamadas de IA.
-
-Para conectar ao backend já implementado, use `npm run dev` com a API disponível; para a stack completa, siga os passos abaixo. O build normal conecta ao Go; `npm run build:demo` prepara a demonstração isolada. Detalhes e limites dos mocks estão no [README do frontend](frontend/README.md). Os testes de UI desta contribuição não substituem nem constituem execução dos testes de Go descritos neste documento.
-
-## Como rodar
-
-**Pré-requisitos:** Docker 24+ com Docker Compose v2 e `make`. Não precisa de Go nem de Node.
+**2. Suba tudo:**
 
 ```bash
 make up
 ```
 
-Na primeira vez leva alguns minutos (build das imagens). O comando faz tudo:
-- cria o `.env` com senhas aleatórias (ele não vai para o git);
+Na primeira vez leva alguns minutos (build das imagens). O comando:
 - sobe Postgres, API, assistente de IA, front e Jaeger;
-- aplica as migrations e carrega o estoque do desafio (100.554 notas).
+- aplica as migrations e carrega o estoque do desafio (100.554 notas);
+- cria as contas de teste da empresa e do gestor.
 
-No fim ele mostra:
+No fim ele mostra os endereços e os logins:
 
 ```
   Front:            http://localhost:3000
@@ -51,28 +40,49 @@ No fim ele mostra:
   Traces (Jaeger):  http://localhost:16686
   Métricas:         http://localhost:8080/metrics
   Assistente (IA):  http://localhost:3000/ai/assistente/status  (só via nginx)
-  Login do gestor:  gestor@antecipe.local
-  Senha do gestor:  <gerada no .env>
+  Login da empresa: empresa@antecipe.local  senha: <do .env>
+  Login do gestor:  gestor@antecipe.local   senha: <do .env>
 ```
 
-**Contas.** Login é opcional: sem conta, tudo funciona (inclusive o `curl` abaixo). A empresa cria a própria conta na tela de cadastro, e os lotes que ela envia logada ficam visíveis só para ela e para o gestor. O primeiro gestor vem do `.env` (`GESTOR_EMAIL` + `GESTOR_SENHA`) e pode criar outros. Para obrigar o login no envio, ponha `exigir_login: true` em `config/antecipe.yaml`. Detalhes em [docs/api.md](docs/api.md#contas-e-login).
+**3. Use.** Abra `http://localhost:3000`, entre como empresa e envie o `data/exemplo.csv`. O chat da IA fica no canto da tela. Na página de um lote, ele já sabe de qual lote você está falando. Entre como gestor para ver e mudar as regras.
 
-O assistente de IA é opcional: sem `OPENROUTER_API_KEY` no `.env`, todo o resto funciona e o `make up` avisa que ele está desligado (veja [Assistente de IA](#assistente-de-ia)).
+### Variáveis do `.env`
 
-Outros comandos (`make` sozinho lista todos):
+Todas ficam num único `.env` na raiz. O `docker-compose.yml` repassa cada uma ao serviço certo.
+
+| Variável | Obrigatória | O que é |
+|---|---|---|
+| `POSTGRES_PASSWORD` | sim | Senha do Postgres (API e assistente usam a mesma) |
+| `GESTOR_EMAIL` / `GESTOR_SENHA` | sim | Login do gestor, criado na subida |
+| `EMPRESA_EMAIL` / `EMPRESA_SENHA` | não | Conta de empresa de teste. Faltando, o `make up` completa |
+| `AI_SECURITY_KEY` | não | Chave entre o nginx e o assistente. Faltando, o `make up` gera |
+| `OPENROUTER_API_KEY` | para a IA | Chave do OpenRouter. Vazia: tudo funciona, menos o chat |
+| `AI_MODELO` | não | Outro modelo do OpenRouter (padrão `deepseek/deepseek-v4-flash`) |
+| `LOG_LEVEL` | não | `info` (padrão) ou `debug` |
+
+O `.env` nunca vai para o git. Se você mudar o `.env` com tudo no ar, rode `make up` de novo. **Trocou a `POSTGRES_PASSWORD` depois da primeira subida** (ex.: colocou o `.env` do formulário por cima de um gerado)? O banco antigo guarda a senha velha e a API não conecta (`password authentication failed` no `make logs`): rode `make limpar` e depois `make up`.
+
+**Contas.** Sem login também funciona: o envio de lotes é aberto. Logada, a empresa vê só os próprios lotes. O gestor vê todos e pode criar outros gestores. Para obrigar o login no envio, ponha `exigir_login: true` em `config/antecipe.yaml`. Detalhes em [docs/api.md](docs/api.md#contas-e-login).
+
+### Comandos
+
+`make` sozinho lista todos.
 
 | Comando | O que faz |
 |---|---|
+| `make up` | Sobe tudo (e refaz o que mudou) |
 | `make down` | Para tudo (os dados ficam no volume) |
 | `make limpar` | Para tudo e apaga o banco local (volta ao estoque original) |
-| `make logs` / `make logs-ai` | Acompanha os logs da API / do assistente de IA |
+| `make logs` / `make logs-ai` | Logs da API / do assistente de IA |
 | `make gerar N=500000` | Gera um lote de teste em `amostras/` |
 | `make carga` | Mede lotes de 100k, 250k e 500k linhas |
 | `make demo-concorrencia` | Duas cessões simultâneas com notas em comum, sem venda duplicada |
+| `make conferir-gabarito LOTE=<id>` | Compara por SQL um lote com o gabarito oficial |
 | `make check` | Procura segredos no repositório (gitleaks) |
-| `make publicar REGISTRO=…` | Monta e envia as imagens para um registry (deploy na Railway) |
-| `make test` / `make test-integracao` | Testes de unidade / todos, inclusive banco e ponta a ponta (precisam de Go 1.27) |
-| `make test-ai` | Testes do assistente de IA (precisa do `uv`; não usa rede nem chave) |
+| `make test` / `make test-integracao` | Testes de unidade / todos, com banco e ponta a ponta (precisam de Go 1.27) |
+| `make test-ai` | Testes do assistente de IA (precisa do `uv`; sem rede e sem chave) |
+
+**Se algo der errado:** porta ocupada (3000, 8080, 5433, 16686) → pare o que usa a porta ou rode `make down`. A API não sobe → `make logs`. O chat aparece como indisponível → confira `OPENROUTER_API_KEY` no `.env` e rode `make up`.
 
 ### Arquivos para testar
 
@@ -325,15 +335,6 @@ Os testes ponta a ponta sobem a aplicação inteira contra um Postgres de verdad
 - logs sem dados.
 
 ---
-
-## Deploy na Railway (por imagens Docker)
-
-```bash
-docker login
-make publicar REGISTRO=docker.io/SEU_USUARIO TAG=v1   # monta e envia antecipe-api, antecipe-web e antecipe-ai
-```
-
-Depois, crie na Railway os serviços `Postgres`, `api`, `ai` e `web` a partir das imagens. O passo a passo, com todas as variáveis, está em [`docs/deploy-railway.md`](docs/deploy-railway.md). O nginx recebe os endereços internos por variável (`API_UPSTREAM`, `AI_UPSTREAM`) e resolve o DNS a cada 10 s, porque na Railway o IP interno muda a cada deploy.
 
 ## Sem Docker (alternativa)
 

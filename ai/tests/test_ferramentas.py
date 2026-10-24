@@ -235,6 +235,23 @@ async def test_consultar_regras_usa_titulos_do_catalogo():
     assert out["publicada_em"] == "24/10/2026 15:10"
 
 
+async def test_formato_explica_a_data_de_aquisicao():
+    config = {
+        "fundo": {"nome": "ANTECIPE FIDC"},
+        "data_base_padrao": "2026-10-22",
+        "precificacao": {"descricao": "Juros compostos · 2% ao mês"},
+        "upload": {
+            "separador": ";",
+            "colunas": ["NU_DOCUMENTO", "VALOR_NOMINAL", "DATA_VENCIMENTO_ORIGINAL", "DATA_AQUISICAO"],
+            "tamanho_maximo_bytes": 300 << 20,
+        },
+    }
+    out = json.loads(await ferramentas(FakeAPI({"/api/config": (200, config)})).consultar_formato_do_arquivo())
+    assert out["data_base_padrao"] == "22/10/2026"
+    assert out["tamanho_maximo_mb"] == 300
+    assert "data em que o fundo adquire a nota" in out["coluna_opcional"]["DATA_AQUISICAO"]
+
+
 async def test_logs_nao_levam_dados_da_nota(caplog: pytest.LogCaptureFixture):
     # mesma configuração de produção, capturando tudo que chega em qualquer logger
     logs.configurar("info")

@@ -4,7 +4,7 @@ SHELL := /bin/bash
 N ?= 500000
 SEMENTE ?= 42
 
-.PHONY: ajuda up down limpar publicar conferir-gabarito logs logs-ai test test-ai test-integracao gerar carga check demo-concorrencia
+.PHONY: ajuda up down limpar conferir-gabarito logs logs-ai test test-ai test-integracao gerar carga check demo-concorrencia
 
 ajuda: ## Mostra os comandos
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-20s %s\n", $$1, $$2}'
@@ -14,11 +14,14 @@ ajuda: ## Mostra os comandos
 	@sed -i.bak "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')/" .env
 	@sed -i.bak "s/^GESTOR_SENHA=.*/GESTOR_SENHA=$$(head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')/" .env
 	@sed -i.bak "s/^AI_SECURITY_KEY=.*/AI_SECURITY_KEY=$$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')/" .env
+	@sed -i.bak "s/^EMPRESA_SENHA=.*/EMPRESA_SENHA=$$(head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')/" .env
 	@rm -f .env.bak
 	@echo "Criei o .env com senhas aleatórias (ele não vai para o git)."
 
 up: .env ## Sobe Postgres, API e front (primeira vez: alguns minutos)
 	@grep -qE '^AI_SECURITY_KEY=.+' .env || echo "AI_SECURITY_KEY=$$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')" >> .env
+	@grep -qE '^EMPRESA_EMAIL=.+' .env || echo "EMPRESA_EMAIL=empresa@antecipe.local" >> .env
+	@grep -qE '^EMPRESA_SENHA=.+' .env || echo "EMPRESA_SENHA=$$(head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')" >> .env
 	docker compose up --build -d
 	@echo "Esperando a API ficar pronta..."
 	@for i in $$(seq 1 90); do \
@@ -26,14 +29,17 @@ up: .env ## Sobe Postgres, API e front (primeira vez: alguns minutos)
 		sleep 2; \
 		if [ $$i -eq 90 ]; then echo "A API não respondeu. Veja: make logs"; exit 1; fi; \
 	done
+	@# conta de empresa de teste (a mesma do data/exemplo.csv); se já existir, a API responde 409 e segue
+	@curl -s -o /dev/null -X POST http://localhost:8080/api/auth/cadastro -H 'Content-Type: application/json' \
+		-d "{\"nome\":\"Empresa Teste\",\"email\":\"$$(grep '^EMPRESA_EMAIL=' .env | cut -d= -f2)\",\"senha\":\"$$(grep '^EMPRESA_SENHA=' .env | cut -d= -f2)\",\"empresa_nome\":\"NLR INDÚSTRIA DE ESTOFADOS LTDA ME\",\"empresa_cnpj\":\"10.062.050/0001-57\"}" || true
 	@echo ""
 	@echo "  Front:            http://localhost:3000"
 	@echo "  API:              http://localhost:8080/api/saude"
 	@echo "  Traces (Jaeger):  http://localhost:16686"
 	@echo "  Métricas:         http://localhost:8080/metrics"
 	@echo "  Assistente (IA):  http://localhost:3000/ai/assistente/status  (só via nginx)"
-	@echo "  Login do gestor:  $$(grep '^GESTOR_EMAIL=' .env | cut -d= -f2 | grep . || echo gestor@antecipe.local)"
-	@echo "  Senha do gestor:  $$(grep '^GESTOR_SENHA=' .env | cut -d= -f2)"
+	@echo "  Login da empresa: $$(grep '^EMPRESA_EMAIL=' .env | cut -d= -f2)  senha: $$(grep '^EMPRESA_SENHA=' .env | cut -d= -f2)"
+	@echo "  Login do gestor:  $$(grep '^GESTOR_EMAIL=' .env | cut -d= -f2 | grep . || echo gestor@antecipe.local)  senha: $$(grep '^GESTOR_SENHA=' .env | cut -d= -f2)"
 	@echo ""
 	@grep -qE '^OPENROUTER_API_KEY=.+' .env || { echo "  Assistente de IA desligado: coloque OPENROUTER_API_KEY no .env e rode make up de novo."; echo ""; }
 
@@ -78,20 +84,6 @@ demo-concorrencia: .env ## Mostra duas cessões simultâneas sem venda duplicada
 REGISTRO ?=
 TAG ?= latest
 
-publicar: ## Monta e envia as imagens para um registry (ex.: make publicar REGISTRO=docker.io/seu-usuario TAG=v1)
-	@test -n "$(REGISTRO)" || { echo "Informe o registry: make publicar REGISTRO=docker.io/seu-usuario (ou ghcr.io/seu-usuario)"; exit 1; }
-	docker build --platform linux/amd64 -f backend/Dockerfile -t $(REGISTRO)/antecipe-api:$(TAG) .
-	docker build --platform linux/amd64 -t $(REGISTRO)/antecipe-web:$(TAG) ./frontend
-	docker build --platform linux/amd64 -t $(REGISTRO)/antecipe-ai:$(TAG) ./ai
-	docker push $(REGISTRO)/antecipe-api:$(TAG)
-	docker push $(REGISTRO)/antecipe-web:$(TAG)
-	docker push $(REGISTRO)/antecipe-ai:$(TAG)
-	@echo ""
-	@echo "  Imagens publicadas:"
-	@echo "    $(REGISTRO)/antecipe-api:$(TAG)"
-	@echo "    $(REGISTRO)/antecipe-web:$(TAG)"
-	@echo "    $(REGISTRO)/antecipe-ai:$(TAG)"
-	@echo "  Passo a passo da Railway: docs/deploy-railway.md"
 
 conferir-gabarito: ## Compara por SQL um lote do banco com o gabarito oficial (make conferir-gabarito LOTE=<lote_id>)
 	@test -n "$(LOTE)" || { echo "Informe o lote: make conferir-gabarito LOTE=<lote_id>"; exit 1; }

@@ -138,5 +138,6 @@ Os testes cobrem as 4 ferramentas (lote da tela e lote citado, id inválido, lot
 ## Limitações
 
 - Sem autenticação, como a área da empresa na API. Em produção, o AgentOS aceita JWT (`authorization=True`).
+- O assistente não distingue empresa e gestor: responde aos dois do mesmo jeito. O papel de quem pergunta vem junto com a autenticação.
 - A API não lista lotes, então o assistente precisa do id ou do lote aberto na tela.
 - As dependências são resolvidas em 14/10/2026 (`uv pip compile --exclude-newer 2026-10-14`), para não puxar pacotes publicados na véspera do evento.

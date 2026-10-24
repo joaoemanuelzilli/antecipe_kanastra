@@ -159,8 +159,9 @@ class AntecipeTools(Toolkit):
         return _json(resumo_das_regras(regras))
 
     async def consultar_formato_do_arquivo(self) -> str:
-        """Mostra como o arquivo CSV deve ser montado (colunas, separador, tamanho máximo) e a
-        data-base padrão. Use para dúvidas sobre como preparar ou corrigir o arquivo.
+        """Mostra como o arquivo CSV deve ser montado (colunas, separador, tamanho máximo), a
+        data-base padrão e para que serve a coluna opcional DATA_AQUISICAO. Use para dúvidas sobre como
+        preparar ou corrigir o arquivo.
         """
         try:
             cfg = await self._get("GET /api/config", "/api/config")
@@ -174,6 +175,12 @@ class AntecipeTools(Toolkit):
                 "preco": (cfg.get("precificacao") or {}).get("descricao"),
                 "separador": upload.get("separador"),
                 "colunas": upload.get("colunas"),
+                # Contrato v1.4: sem isto o modelo chuta o significado da coluna.
+                "coluna_opcional": {
+                    "DATA_AQUISICAO": "Pode ficar vazia. É a data em que o fundo adquire a nota e vira a data-base "
+                    "dela: o prazo, os dias até o vencimento e o preço contam a partir dessa data. Vazia, vale a "
+                    "data-base do envio (a padrão, se o envio não informar outra)."
+                },
                 "tamanho_maximo_mb": (upload.get("tamanho_maximo_bytes") or 0) // (1 << 20),
                 "formato": "UTF-8 com cabeçalho, valores com vírgula decimal (1.234,56) e datas dd/mm/aaaa.",
             }
