@@ -357,3 +357,32 @@ A correção 3 (separar as conversas por usuário) não foi aplicada, porque nã
 
 **O que o time fez com a resposta:** _(preencher)_
 
+---
+
+## #13 · 24/10/2026 ~14:50 · Enviar as imagens
+
+**Prompt (time → Claude Code):**
+
+> pode enviar as imagens entao, como vc recomenda?
+
+**O que a IA fez:** conferiu que a máquina não tinha login no Docker Hub (só o nome dos registries, sem ler credenciais). Pediu ao time que criasse um token Read & Write e fizesse o `docker login`, para a senha não passar pelo chat, e que informasse o usuário para rodar `make publicar REGISTRO=docker.io/USUARIO TAG=v1`.
+
+**O que o time fez com a resposta:** decidiu continuar no notebook do colega (entrada #14).
+
+---
+
+## #14 · 24/10/2026 ~14:55 · Commit e push para o colega continuar
+
+**Prompt (time → Claude Code):**
+
+> commit e push para meu colega continuar no notebook dele
+
+**O que a IA fez:** conferiu que não havia commits novos no remoto, registrou estas entradas e fez commit e push de tudo.
+
+Pendências para quem continuar:
+1. **Publicar as imagens:** `docker login -u USUARIO` (token Read & Write do Docker Hub) e depois `make publicar REGISTRO=docker.io/USUARIO TAG=v1`. Na Railway, seguir o `docs/deploy-railway.md`.
+2. **Integrar o front React** na pasta `frontend/`, mantendo o `frontend/Dockerfile` e o `frontend/templates/default.conf.template`. O contrato está no `docs/api.md` (v1.4).
+3. **Antes do pitch,** rodar `make limpar && make up` para começar com banco novo.
+
+**O que o time fez com a resposta:** _(preencher)_
+
