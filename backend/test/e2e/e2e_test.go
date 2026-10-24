@@ -383,3 +383,41 @@ func TestPaginacao(t *testing.T) {
 		t.Fatalf("paginação = %v", p)
 	}
 }
+
+func (a *app) enviarComChave(t *testing.T, conteudo []byte, chave string) (*http.Response, map[string]any) {
+	t.Helper()
+	var corpo bytes.Buffer
+	mw := multipart.NewWriter(&corpo)
+	fw, _ := mw.CreateFormFile("arquivo", "lote.csv")
+	_, _ = fw.Write(conteudo)
+	_ = mw.Close()
+	req, _ := http.NewRequest(http.MethodPost, a.url+"/api/lotes", &corpo)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	req.Header.Set("Idempotency-Key", chave)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return resp, lerJSON(t, resp)
+}
+
+func TestIdempotencyKeyComOutroArquivo(t *testing.T) {
+	a := novoApp(t)
+	resp, r := a.enviarComChave(t, exemplo(t), "minha-chave")
+	if resp.StatusCode != http.StatusAccepted {
+		t.Fatalf("primeiro envio = %d %v", resp.StatusCode, r)
+	}
+	a.esperar(t, r["lote_id"].(string))
+	resp, r2 := a.enviarComChave(t, exemplo(t), "minha-chave")
+	if resp.StatusCode != http.StatusOK || r2["lote_id"] != r["lote_id"] {
+		t.Fatalf("mesmo arquivo e mesma chave = %d %v", resp.StatusCode, r2)
+	}
+	outro := append(exemplo(t), []byte("ANTECIPE FIDC;92.234.400/0001-80;CED;10.062.050/0001-57;SAC;22.144.961/0001-02;X1;Duplicata;1000,00;21/11/2026;\n")...)
+	resp, r3 := a.enviarComChave(t, outro, "minha-chave")
+	if resp.StatusCode != http.StatusConflict || r3["erro"].(map[string]any)["codigo"] != "IDEMPOTENCY_KEY_REUTILIZADA" {
+		t.Fatalf("outro arquivo com a mesma chave = %d %v", resp.StatusCode, r3)
+	}
+	if n := a.contarLotes(t); n != 1 {
+		t.Fatalf("lotes = %d", n)
+	}
+}

@@ -138,20 +138,25 @@ func (s *Servico) Enviar(ctx context.Context, e Envio) (id string, replay bool, 
 	if total == 0 {
 		return "", false, apperrors.Validation("ARQUIVO_VAZIO", "O arquivo não tem nenhuma nota.")
 	}
+	h := sha256.Sum256([]byte(e.Hash + "|" + dataBase.Format("2006-01-02") + "|" + itoa(versao.Numero) + "|" +
+		prec.Metodo + "|" + prec.TaxaMensalPercentual.String() + "|" + itoa(prec.BaseDias)))
+	impressao := hex.EncodeToString(h[:])
 	chave := e.IdempotencyKey
 	if chave == "" {
-		h := sha256.Sum256([]byte(e.Hash + "|" + dataBase.Format("2006-01-02") + "|" + itoa(versao.Numero) + "|" +
-			prec.Metodo + "|" + prec.TaxaMensalPercentual.String() + "|" + itoa(prec.BaseDias)))
-		chave = hex.EncodeToString(h[:])
+		chave = impressao
 	}
-	id, criado, status, err := s.d.Lotes.CriarLote(ctx, domain.NovoLote{
-		IdempotencyKey: chave, Hash: e.Hash, DataBase: dataBase, RegrasVersao: versao.Numero, Precificacao: prec, LinhasTotal: total,
+	lc, err := s.d.Lotes.CriarLote(ctx, domain.NovoLote{
+		IdempotencyKey: chave, Impressao: impressao, Hash: e.Hash, DataBase: dataBase, RegrasVersao: versao.Numero, Precificacao: prec, LinhasTotal: total,
 	})
 	if err != nil {
 		return "", false, err
 	}
-	if !criado && status == domain.LoteErro {
-		reiniciou, err := s.d.Lotes.ReiniciarLote(ctx, id, total)
+	id, criado := lc.ID, lc.Criado
+	if !criado && lc.Impressao != impressao {
+		return "", false, apperrors.Conflict("IDEMPOTENCY_KEY_REUTILIZADA", "Essa Idempotency-Key já foi usada com outro arquivo ou outra data-base.")
+	}
+	if !criado && lc.Status == domain.LoteErro {
+		reiniciou, err := s.d.Lotes.ReiniciarLote(ctx, id, total, impressao)
 		if err != nil {
 			return "", false, err
 		}

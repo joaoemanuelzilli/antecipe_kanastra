@@ -107,11 +107,20 @@ type Cessao struct {
 // NovoLote são os dados para registrar um envio.
 type NovoLote struct {
 	IdempotencyKey string
+	Impressao      string // hash do arquivo + data-base + versão das regras + preço
 	Hash           string
 	DataBase       time.Time
 	RegrasVersao   int
 	Precificacao   Precificacao
 	LinhasTotal    int
+}
+
+// LoteCriado é o resultado de CriarLote: o lote novo ou o que já existia com a mesma chave.
+type LoteCriado struct {
+	ID        string
+	Criado    bool
+	Status    string
+	Impressao string
 }
 
 // ResumoLote é o que se grava ao concluir.
@@ -148,8 +157,8 @@ type FiltroNotas struct {
 
 // LoteRepository guarda lotes e os resultados das notas.
 type LoteRepository interface {
-	CriarLote(ctx context.Context, n NovoLote) (id string, criado bool, status string, err error)
-	ReiniciarLote(ctx context.Context, id string, linhasTotal int) (bool, error) // false: outro envio já reiniciou
+	CriarLote(ctx context.Context, n NovoLote) (LoteCriado, error)
+	ReiniciarLote(ctx context.Context, id string, linhasTotal int, impressao string) (bool, error) // false: outro envio já reiniciou
 	MarcarEtapa(ctx context.Context, id, status, etapa string) error
 	GravarResultados(ctx context.Context, id string, rs []Resultado, aoAvancar func(int)) error
 	ConcluirLote(ctx context.Context, id string, r ResumoLote) error

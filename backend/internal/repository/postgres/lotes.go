@@ -19,32 +19,29 @@ var _ domain.LoteRepository = (*Repo)(nil)
 var errLoteNaoEncontrado = apperrors.NotFound("LOTE_NAO_ENCONTRADO", "Lote não encontrado.")
 
 // CriarLote registra o envio. Se a chave de idempotência já existe, devolve o lote existente (criado=false).
-func (r *Repo) CriarLote(ctx context.Context, n domain.NovoLote) (string, bool, string, error) {
+func (r *Repo) CriarLote(ctx context.Context, n domain.NovoLote) (domain.LoteCriado, error) {
+	var c domain.LoteCriado
 	prec, err := json.Marshal(n.Precificacao)
 	if err != nil {
-		return "", false, "", err
+		return c, err
 	}
-	var id string
 	err = r.Pool.QueryRow(ctx, `
-		INSERT INTO lotes (idempotency_key, hash_arquivo, data_base, regras_versao, precificacao, status, linhas_total)
-		VALUES ($1, $2, $3, $4, $5, 'na_fila', $6)
+		INSERT INTO lotes (idempotency_key, impressao, hash_arquivo, data_base, regras_versao, precificacao, status, linhas_total)
+		VALUES ($1, $2, $3, $4, $5, $6, 'na_fila', $7)
 		ON CONFLICT (idempotency_key) DO NOTHING
-		RETURNING id`, n.IdempotencyKey, n.Hash, n.DataBase, n.RegrasVersao, prec, n.LinhasTotal).Scan(&id)
+		RETURNING id`, n.IdempotencyKey, n.Impressao, n.Hash, n.DataBase, n.RegrasVersao, prec, n.LinhasTotal).Scan(&c.ID)
 	if err == nil {
-		return id, true, domain.LoteNaFila, nil
+		return domain.LoteCriado{ID: c.ID, Criado: true, Status: domain.LoteNaFila, Impressao: n.Impressao}, nil
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {
-		return "", false, "", err
+		return c, err
 	}
-	var status string
-	if err := r.Pool.QueryRow(ctx, `SELECT id, status FROM lotes WHERE idempotency_key = $1`, n.IdempotencyKey).Scan(&id, &status); err != nil {
-		return "", false, "", err
-	}
-	return id, false, status, nil
+	err = r.Pool.QueryRow(ctx, `SELECT id, status, impressao FROM lotes WHERE idempotency_key = $1`, n.IdempotencyKey).Scan(&c.ID, &c.Status, &c.Impressao)
+	return c, err
 }
 
 // ReiniciarLote volta um lote com erro para a fila. Só um chamador consegue (os outros recebem false).
-func (r *Repo) ReiniciarLote(ctx context.Context, id string, linhasTotal int) (bool, error) {
+func (r *Repo) ReiniciarLote(ctx context.Context, id string, linhasTotal int, impressao string) (bool, error) {
 	tx, err := r.Pool.Begin(ctx)
 	if err != nil {
 		return false, err
@@ -53,7 +50,7 @@ func (r *Repo) ReiniciarLote(ctx context.Context, id string, linhasTotal int) (b
 	tag, err := tx.Exec(ctx, `
 		UPDATE lotes SET status = 'na_fila', etapa = NULL, linhas_total = $2, linhas_processadas = 0, totais = NULL,
 		       motivos = NULL, erros_configuracao = '[]', erro = NULL, iniciado_em = NULL, concluido_em = NULL, duracao_ms = NULL
-		WHERE id = $1 AND status = 'erro'`, id, linhasTotal)
+		WHERE id = $1 AND status = 'erro' AND impressao = $3`, id, linhasTotal, impressao)
 	if err != nil {
 		return false, err
 	}
