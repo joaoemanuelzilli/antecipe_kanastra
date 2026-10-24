@@ -12,34 +12,22 @@ import (
 
 	"github.com/shopspring/decimal"
 
+	"antecipe/internal/domain"
 	"antecipe/internal/platform/format"
 )
 
 const (
-	Composto = "DESCONTO_COMPOSTO"
-	Simples  = "DESCONTO_SIMPLES"
+	Composto = domain.MetodoComposto
+	Simples  = domain.MetodoSimples
 )
 
 func init() { decimal.MarshalJSONWithoutQuotes = true }
 
-// Config é o que define o preço: método, taxa mensal (%) e base em dias.
-type Config struct {
-	Metodo               string          `json:"metodo"`
-	TaxaMensalPercentual decimal.Decimal `json:"taxa_mensal_percentual"`
-	BaseDias             int             `json:"base_dias"`
-}
+// Config é a precificação do domínio (método, taxa e base).
+type Config = domain.Precificacao
 
 // Metodos lista os métodos aceitos.
 func Metodos() []string { return []string{Composto, Simples} }
-
-// Descricao devolve o texto curto para a tela: "Juros compostos · 2% ao mês".
-func (c Config) Descricao() string {
-	nome := "Juros compostos"
-	if c.Metodo == Simples {
-		nome = "Juros simples"
-	}
-	return nome + " · " + pct(c.TaxaMensalPercentual) + " ao mês"
-}
 
 // Efetiva aplica as sobrescritas do YAML sobre a precificação das regras publicadas.
 func Efetiva(base Config, metodo *string, taxa *decimal.Decimal, baseDias *int) (Config, []string) {

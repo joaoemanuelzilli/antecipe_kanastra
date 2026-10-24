@@ -22,14 +22,14 @@ func Concentrar(cands []*domain.Resultado, r rules.Regras, est domain.EstoqueFun
 		}
 		pct, err := v.Parametros.Decimal("percentual_maximo")
 		if err != nil {
-			erros = append(erros, ErroConfig{v.Codigo, "Regra " + v.Codigo + " tem parâmetro inválido e foi ignorada."})
+			erros = append(erros, ErroConfig{Codigo: v.Codigo, Mensagem: "Regra " + v.Codigo + " tem parâmetro inválido e foi ignorada."})
 			continue
 		}
 		agrupamento := "CNPJ"
 		if _, presente := v.Parametros["agrupamento"]; presente {
 			agrupamento, err = v.Parametros.Texto("agrupamento")
 			if err != nil || (agrupamento != "RAIZ_CNPJ" && agrupamento != "CNPJ") {
-				erros = append(erros, ErroConfig{v.Codigo, "Regra " + v.Codigo + " tem parâmetro inválido e foi ignorada."})
+				erros = append(erros, ErroConfig{Codigo: v.Codigo, Mensagem: "Regra " + v.Codigo + " tem parâmetro inválido e foi ignorada."})
 				continue
 			}
 		}

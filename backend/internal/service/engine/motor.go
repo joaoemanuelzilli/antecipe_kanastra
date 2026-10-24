@@ -27,19 +27,11 @@ type Contexto struct {
 	AoAvancar func(etapa string, feitas int) // opcional
 }
 
-type Totais struct {
-	Linhas           int   `json:"linhas"`
-	Aprovadas        int   `json:"aprovadas"`
-	Recusadas        int   `json:"recusadas"`
-	FaceCentavos     int64 `json:"face_centavos"`
-	DescontoCentavos int64 `json:"desconto_centavos"`
-	LiquidoCentavos  int64 `json:"liquido_centavos"`
-}
-
-type ErroConfig struct {
-	Codigo   string `json:"codigo"`
-	Mensagem string `json:"mensagem"`
-}
+// Totais e ErroConfig são tipos do domínio.
+type (
+	Totais     = domain.Totais
+	ErroConfig = domain.ErroConfig
+)
 
 // Saida do motor. Resultados[i] corresponde a notas[i].
 type Saida struct {

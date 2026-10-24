@@ -16,6 +16,7 @@ import (
 	"unicode/utf8"
 
 	"antecipe/internal/domain"
+	"antecipe/internal/platform/apperrors"
 )
 
 // Colunas do formato do desafio, na ordem do arquivo de exemplo.
@@ -38,6 +39,18 @@ type Detalhe struct {
 }
 
 func (e *ErroArquivo) Error() string { return e.Codigo + ": " + e.Mensagem }
+
+// AppError traduz para o erro da aplicação: não-CSV → 415, o resto → 422 com os detalhes.
+func (e *ErroArquivo) AppError() *apperrors.Error {
+	if e.Codigo == "ARQUIVO_NAO_CSV" {
+		return apperrors.Unsupported(e.Codigo, e.Mensagem)
+	}
+	ae := apperrors.Validation(e.Codigo, e.Mensagem)
+	if len(e.Detalhes) > 0 {
+		ae = ae.WithDetails(e.Detalhes)
+	}
+	return ae
+}
 
 const intervaloProgresso = 10000
 
@@ -400,3 +413,11 @@ func cp1252ParaUTF8(b []byte) []byte {
 	}
 	return out
 }
+
+// Leitor é o adaptador do formato CSV para a porta domain.LeitorNotas.
+type Leitor struct{}
+
+func (Leitor) Ler(r io.Reader, aoAvancar func(lidas int)) ([]domain.Nota, error) {
+	return Ler(r, aoAvancar)
+}
+func (Leitor) ContarLinhas(r io.Reader) (int, error) { return ContarLinhas(r) }
