@@ -1,0 +1,23 @@
+# Segredos (o make up gera o .env a partir do .env.example)
+.env
+.env.*
+!.env.example
+
+# Lotes gerados para teste de carga (100k a 500k linhas)
+amostras/
+
+# Build e dependências
+backend/bin/
+frontend/node_modules/
+frontend/dist/
+node_modules/
+dist/
+coverage/
+*.test
+*.out
+
+# Editor e sistema
+.idea/
+.vscode/
+.DS_Store
+*.swp
