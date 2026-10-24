@@ -549,3 +549,15 @@ Meus lotes: cards e Novo envio compartilhados com a Dashboard; busca, situação
 
 **O que o time fez com a resposta:** _(preencher)_
 
+---
+
+## #22 · 24/10/2026 · Zerar o banco
+
+**Prompt (time → Claude Code):**
+
+> zera o banco pra testar dnb
+
+**O que a IA fez:** rodou `make limpar && make up` e conferiu o estado: 100.554 notas no estoque (semente), 0 lotes, 0 cessões e regras na versão 1. Fez uma conferência rápida com o arquivo de 100 mil (100.554 de 100.554 idênticas ao gabarito, só com SQL) e zerou o banco de novo para o time testar do zero.
+
+**O que o time fez com a resposta:** _(preencher)_
+
