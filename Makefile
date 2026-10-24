@@ -4,7 +4,7 @@ SHELL := /bin/bash
 N ?= 500000
 SEMENTE ?= 42
 
-.PHONY: ajuda up down logs test
+.PHONY: ajuda up down logs test demo-concorrencia
 
 ajuda: ## Mostra os comandos
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-20s %s\n", $$1, $$2}'
@@ -40,3 +40,6 @@ logs: ## Acompanha os logs da API
 
 test: ## Testes de unidade do backend (precisa de Go 1.27)
 	cd backend && go test ./...
+
+demo-concorrencia: ## Mostra duas cessões simultâneas sem venda duplicada (precisa do make up)
+	./scripts/demo-concorrencia.sh

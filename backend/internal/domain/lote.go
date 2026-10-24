@@ -165,3 +165,24 @@ type LeitorNotas interface {
 	Ler(r io.Reader, aoAvancar func(lidas int)) ([]Nota, error)
 	ContarLinhas(r io.Reader) (int, error)
 }
+
+// Excluida é uma nota aprovada na simulação que não pôde ser vendida na confirmação.
+type Excluida struct {
+	Linha    int    `json:"linha"`
+	Codigo   string `json:"codigo"`
+	Titulo   string `json:"titulo"`
+	Mensagem string `json:"mensagem"`
+}
+
+// FundoDestino é o fundo que compra as notas na cessão.
+type FundoDestino struct {
+	Nome, CNPJ string
+}
+
+// Reverificar recebe as aprovadas e o estoque atual (dentro da transação) e devolve as que não podem mais ser vendidas.
+type Reverificar func(aprovadas []Resultado, estoque EstoqueFundo) []Excluida
+
+// CessaoRepository executa a venda de forma atômica e segura contra concorrência.
+type CessaoRepository interface {
+	Ceder(ctx context.Context, loteID, idempotencyKey string, fundo FundoDestino, reverificar Reverificar) (c Cessao, excluidas []Excluida, replay bool, err error)
+}

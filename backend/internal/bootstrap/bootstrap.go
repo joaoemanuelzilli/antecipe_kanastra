@@ -17,6 +17,7 @@ import (
 	"antecipe/internal/platform/config"
 	"antecipe/internal/repository/filesystem"
 	"antecipe/internal/repository/postgres"
+	"antecipe/internal/service/assignment"
 	"antecipe/internal/service/batch"
 )
 
@@ -94,7 +95,7 @@ func Novo(ctx context.Context, amb Ambiente, log *slog.Logger) (*App, error) {
 		return nil, err
 	}
 	h := rest.NovoServidor(rest.Deps{
-		Lotes: lotes, Saude: repo.Ping, Metricas: amb.Metricas, Log: log,
+		Lotes: lotes, Cessoes: assignment.Novo(repo, repo, repo, log), Saude: repo.Ping, Metricas: amb.Metricas, Log: log,
 		GestorSenha: amb.GestorSenha, CORSOrigens: amb.CORSOrigens, TmpDir: amb.TmpDir,
 	})
 	return &App{Handler: h, Repo: repo, Lotes: lotes, cancel: cancel}, nil

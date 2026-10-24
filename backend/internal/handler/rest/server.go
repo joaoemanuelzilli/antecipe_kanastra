@@ -12,19 +12,20 @@ import (
 
 	"antecipe/internal/platform/apperrors"
 	"antecipe/internal/platform/observability"
+	"antecipe/internal/service/assignment"
 	"antecipe/internal/service/batch"
 )
 
 // Deps do servidor HTTP.
 type Deps struct {
 	Lotes       *batch.Servico
+	Cessoes     *assignment.Servico
 	Saude       func(ctx context.Context) error
 	Metricas    http.Handler
 	Log         *slog.Logger
 	GestorSenha string
 	CORSOrigens []string
 	TmpDir      string
-	Extras      func(mux *http.ServeMux, h *Handlers) // rotas registradas por outros casos de uso
 }
 
 // Handlers agrupa os handlers e o que eles compartilham.
@@ -43,20 +44,12 @@ func NovoServidor(d Deps) http.Handler {
 	mux.HandleFunc("GET /api/lotes/{id}/notas", h.listarNotas)
 	mux.HandleFunc("GET /api/lotes/{id}/notas.csv", h.baixarNotas)
 	mux.HandleFunc("POST /api/validar", h.validar)
+	mux.HandleFunc("POST /api/lotes/{id}/cessao", h.ceder)
 	if d.Metricas != nil {
 		mux.Handle("GET /metrics", d.Metricas)
 	}
-	if d.Extras != nil {
-		d.Extras(mux, h)
-	}
 	return observability.Middleware(d.Log, cors(d.CORSOrigens, recuperar(d.Log, mux)))
 }
-
-// Log expõe o logger para handlers registrados em Extras.
-func (h *Handlers) Log() *slog.Logger { return h.d.Log }
-
-// GestorSenha expõe a senha do gestor para handlers registrados em Extras.
-func (h *Handlers) GestorSenha() string { return h.d.GestorSenha }
 
 func (h *Handlers) saude(w http.ResponseWriter, r *http.Request) {
 	if h.d.Saude != nil {
