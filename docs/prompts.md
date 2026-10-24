@@ -193,3 +193,17 @@ Depois disso, a IA seguiu o plano até a Tarefa 13 (12:15):
   - integrar o front do colega.
 
 **O que o time fez com a resposta:** _(preencher)_
+
+---
+
+## #7a · 24/10/2026 12:13 · Revisão final por subagente (sem prompt novo do time)
+
+**Prompt da IA para um subagente revisor (modelo Opus):** revisar o branch inteiro (commits `2ada0d9..2991d34`) como revisor sênior. Usou o template de revisão da skill superpowers:requesting-code-review, preenchido com:
+- o resumo do que foi construído e os critérios de nota do edital;
+- os caminhos do plano, do contrato da API, do plano de implementação e do registro de decisões;
+- os 5 pontos sensíveis do plano (Windows-1252, cabeçalho fora de ordem, API reiniciada, fronteiras das regras, envios simultâneos);
+- o pedido de ler com atenção `docker-compose.yml`, Dockerfiles e Makefile, que ainda não puderam ser executados sem Docker;
+- o formato de saída (pontos fortes, problemas por gravidade, o que deixou de julgar e veredito).
+
+**O que foi feito com a resposta:** _(preencher após a revisão)_
+
