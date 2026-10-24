@@ -26,3 +26,5 @@
 - Resultado: result-refinement.css amplia leitura e controles, preservando grade/Parkinsans/verde. Confirmação inline sem sobrepor robô; nota prioriza motivo e ação, depois dados e atalho contextual ao chat.
 
 - Mobile: `src/mobile.css` é importado após App para consolidar os ajustes até760px. Navegação inferior com rótulos e safe-area, áreas de toque de44px+, inputs16px para evitar zoom no iOS, cartões de notas, paginação API, chat e envio em tela cheia. Não ocultar controles para corrigir overflow; JSON/tabelas técnicas mantêm rolagem local. Validar360px e767px. Markdown do chat carregado sob demanda.
+
+- Loading: upload/preparação/análise usam indicador simples (`showMedia=false`), sem vídeo ou espera artificial na UI. Mock de análise700ms. O robô aparece na confirmação da cessão via CessionModal, que reutiliza o padrão visual de Novo lote. Durante a requisição de cessão não permitir fechar/cancelar nem submeter novamente. A mesma chave de idempotência é mantida em retries. O mock simula1.200ms de resposta; backend real sem atraso artificial.

@@ -13,6 +13,6 @@ export function DocumentProcessingModal({ lot, error, onRetry }: { lot: Lote; er
   }
   return <><DashboardPage /><Dialog.Root open onOpenChange={open => { if (!open) close(); }}><Dialog.Portal><Dialog.Overlay className="new-lot-overlay new-lot-viewport"><Dialog.Content className="new-lot-dialog" onCloseAutoFocus={event => event.preventDefault()}>
     <div className="new-lot-close-row"><Dialog.Close className="new-lot-close" aria-label="Fechar análise do documento"><img src="/figma/new-lot-close.svg" alt="" /></Dialog.Close></div>
-    <DocumentLoadingPanel lot={lot} phase="analyzing" error={error} onRetry={onRetry} onCancel={close} />
+    <DocumentLoadingPanel showMedia={false} lot={lot} phase="analyzing" error={error} onRetry={onRetry} onCancel={close} />
   </Dialog.Content></Dialog.Overlay></Dialog.Portal></Dialog.Root></>;
 }

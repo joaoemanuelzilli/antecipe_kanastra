@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import Link from '@/lib/link';
-import { ArrowDownUp, ArrowRight, Check, CheckCircle2, ChevronDown, ChevronRight, Download, FileSearch, LoaderCircle, Plus, Search, Shield, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowDownUp, ArrowRight, Check, CheckCircle2, ChevronDown, ChevronRight, Download, FileSearch, Plus, Search, Shield, SlidersHorizontal, X } from 'lucide-react';
 import type { FiltrosNotas, Lote, Nota, ResultadoCessao } from '@/api/types';
 import { confirmarCessao, getLote, getNotas, nomeArquivoLote, nomeLote, notasCSVURL } from '@/api/client';
 import { dateBR, moneyCentavos } from '@/lib/format';
@@ -11,7 +11,7 @@ import { PageHeader } from './page-header';
 import { Feedback, Loading } from './feedback';
 import { Button } from './ui/button';
 import { StatusBadge } from './ui/badge';
-import { Modal } from './ui/dialog';
+import { CessionModal } from './cession-modal';
 import { Pagination } from './ui/pagination';
 import { notify } from './notifications';
 import { UploadPage } from './upload-page';
@@ -101,6 +101,6 @@ export function ResultPage({ id }: { id: string }) {
   </div>{lot.status === 'concluido' && totals ? <div className="confirmation-bar"><div className="container confirmation-inner"><div className="confirmation-info"><Shield size={26} /><div><strong>Regras versão {lot.regras_versao} · data-base {dateBR(lot.data_base)}</strong><p>{sale ? `Cessão registrada em ${dateBR(sale.confirmada_em)}.` : totals.aprovadas === 0 ? 'Abra os detalhes das recusas, corrija o arquivo e envie um novo lote.' : 'A cessão só acontece após sua confirmação.'}</p></div></div>{sale ? <div className="confirmed-message"><CheckCircle2 size={20} />Cessão confirmada</div> : <Button disabled={totals.aprovadas === 0} onClick={openConfirmation}>{totals.aprovadas === 0 ? 'Nenhuma nota para ceder' : `Confirmar cessão de ${number(totals.aprovadas)} ${totals.aprovadas === 1 ? 'nota' : 'notas'}`} <ArrowRight size={18} /></Button>}</div></div> : null}
     {uploadOpen ? <UploadPage onDismiss={() => setUploadOpen(false)} /> : null}
     <NoteDetail note={selected} lot={lot} onClose={() => setSelected(null)} />
-    <Modal open={confirmOpen} onOpenChange={open => { if (!confirmMutation.isPending) setConfirmOpen(open); }} title="Confirmar a cessão das notas?" description="Confira o resumo. Apenas as notas aprovadas e ainda disponíveis serão incluídas na cessão." footer={<><Button variant="ghost" disabled={confirmMutation.isPending} onClick={() => setConfirmOpen(false)}>Voltar à revisão</Button><Button disabled={confirmMutation.isPending} onClick={confirm}>{confirmMutation.isPending ? <><LoaderCircle className="spin" size={16} />Confirmando</> : <>Confirmar cessão<ArrowRight size={16} /></>}</Button></>}><div className="dialog-summary"><div className="detail-line"><span>Notas aprovadas</span><strong>{number(totals?.aprovadas ?? 0)} notas</strong></div><div className="detail-line"><span>Valor de face</span><strong>{moneyCentavos(totals?.face_centavos ?? null)}</strong></div><div className="detail-line"><span>Desconto total</span><strong>{moneyCentavos(totals?.desconto_centavos ?? null)}</strong></div><div className="detail-line"><span>Valor líquido simulado</span><strong>{moneyCentavos(totals?.liquido_centavos ?? null)}</strong></div></div><p className="dialog-note">O valor final pode mudar se uma nota tiver sido vendida em outra operação ou a concentração tiver mudado enquanto você revisava o lote.</p><p className="dialog-note">Regras versão {lot.regras_versao} · data-base {dateBR(lot.data_base)}.</p>{confirmMutation.error ? <Feedback>{errorMessage(confirmMutation.error)}</Feedback> : null}</Modal>
+    <CessionModal open={confirmOpen} onClose={() => setConfirmOpen(false)} onConfirm={confirm} pending={confirmMutation.isPending} error={confirmMutation.error ? errorMessage(confirmMutation.error) : undefined} lot={lot} />
   </main>;
 }
