@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ArrowRight, CheckCircle2, Code2, Download, Eye, History, ListChecks, LoaderCircle, LogOut, RefreshCw, Send, ShieldCheck, Undo2 } from 'lucide-react';
-import { ApiError, MOCK_MODE, clearGestorSenha, getGestorSenha, getRegras, getVersao, getVersoes, previaRegras, publicarRegras, verificarGestor } from '@/api/client';
+import { ApiError, MOCK_MODE, clearGestorSenha, getGestorSenha, setGestorSenha, getRegras, getVersao, getVersoes, previaRegras, publicarRegras, verificarGestor } from '@/api/client';
 import type { DetalheVersao, ParametroCatalogo, Previa, Regras, RegrasPublicadas, VersaoRegras } from '@/api/types';
+import { useRouter } from '@/lib/router';
+import './manager-transition.css';
 import { dateBR, moneyCentavos } from '@/lib/format';
 import { validateDraft, withRuleParameter } from '@/lib/rule-draft';
 import { downloadText, errorMessage } from './api';
@@ -25,10 +27,23 @@ function RequestFeedback({ cause }: { cause: unknown }) {
 }
 
 export function ManagerPage() {
+  const [entering, setEntering] = useState(MOCK_MODE);
+  useEffect(() => {
+    if (!MOCK_MODE) return;
+    setGestorSenha('demo-gestor');
+    const timer = window.setTimeout(() => setEntering(false), 1900);
+    return () => window.clearTimeout(timer);
+  }, []);
+  if (entering) return <div className="manager-transition" role="status" aria-live="polite"><div className="manager-transition-fill" /><div className="manager-transition-copy"><span className="manager-transition-icon"><ShieldCheck size={36} strokeWidth={1.5} /></span><h1>Entrando como gestor</h1><p>Preparando seu ambiente…</p><span className="manager-transition-progress" aria-hidden="true"><span /></span></div></div>;
+  return <ManagerContent />;
+}
+
+function ManagerContent() {
+  const router = useRouter();
   const [rules, setRules] = useState<RegrasPublicadas | null>(null);
   const [initialError, setInitialError] = useState<unknown>(null);
-  const [authenticated, setAuthenticated] = useState(false);
-  const [checkingAccess, setCheckingAccess] = useState(() => Boolean(getGestorSenha()));
+  const [authenticated, setAuthenticated] = useState(MOCK_MODE);
+  const [checkingAccess, setCheckingAccess] = useState(() => !MOCK_MODE && Boolean(getGestorSenha()));
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState<unknown>(null);
   const [loginBusy, setLoginBusy] = useState(false);
@@ -41,6 +56,7 @@ export function ManagerPage() {
   }, [loadAttempt]);
 
   useEffect(() => {
+    if (MOCK_MODE) return;
     let alive = true;
     const saved = getGestorSenha();
     if (!saved) return;
@@ -55,7 +71,7 @@ export function ManagerPage() {
     catch (cause) { setLoginError(cause); }
     finally { setLoginBusy(false); }
   }
-  function logout(cause?: unknown) { clearGestorSenha(); setAuthenticated(false); setPassword(''); setLoginError(cause ?? null); }
+  function logout(cause?: unknown) { if (MOCK_MODE) { clearGestorSenha(); router.push('/dashboard'); return; } clearGestorSenha(); setAuthenticated(false); setPassword(''); setLoginError(cause ?? null); }
 
   return <main className="container page-content"><PageHeader title={authenticated ? 'Gestão das regras' : 'Área do gestor'} description={authenticated ? 'Edite com segurança. Confira o impacto antes de publicar.' : 'Gerencie as regras do fundo, confira o impacto de uma alteração e publique novas versões.'} />
     {initialError ? <div style={{ marginBottom: 20 }}><RequestFeedback cause={initialError} /><Button variant="outline" size="small" style={{ marginTop: 12 }} onClick={() => { setInitialError(null); setLoadAttempt((value) => value + 1); }}><RefreshCw size={14} />Tentar carregar novamente</Button></div> : null}
