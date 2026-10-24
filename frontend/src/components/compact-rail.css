@@ -14,3 +14,8 @@
 @media(prefers-reduced-motion:reduce){.rail-brand::after{transition:none}.rail-brand:hover::after,.rail-brand:focus-visible::after{animation:none}}
 :root[data-profile-reduced-motion=true] .rail-brand::after{transition:none;animation:none}
 .rail-nav .rail-link.active>svg{color:#fff}
+@media(min-width:761px){
+ .rail-inner .rail-link:not(.active){border:1px solid #829b8c;background:#fff;color:#004639}
+ .rail-inner .rail-link:not(.active):hover{border-color:#004639;background:#edf8f1}
+ .rail-inner .rail-link:focus-visible{outline:3px solid #008b52;outline-offset:3px}
+}
