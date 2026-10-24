@@ -16,6 +16,12 @@ coverage/
 *.test
 *.out
 
+# Python (serviço de IA)
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
 # Editor e sistema
 .idea/
 .vscode/
