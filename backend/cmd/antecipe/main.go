@@ -15,17 +15,17 @@ import (
 	"os"
 	"time"
 
-	"antecipe/internal/config"
-	"antecipe/internal/csvnota"
-	"antecipe/internal/dominio"
-	"antecipe/internal/fontes"
-	"antecipe/internal/formato"
-	"antecipe/internal/gerador"
-	"antecipe/internal/motor"
-	"antecipe/internal/obs"
-	"antecipe/internal/precificacao"
-	"antecipe/internal/regras"
-	"antecipe/internal/textos"
+	"antecipe/internal/domain"
+	"antecipe/internal/domain/rules"
+	"antecipe/internal/handler/csvfile"
+	"antecipe/internal/platform/config"
+	"antecipe/internal/platform/format"
+	"antecipe/internal/platform/generator"
+	"antecipe/internal/platform/observability"
+	"antecipe/internal/repository/filesystem"
+	"antecipe/internal/service/engine"
+	"antecipe/internal/service/message"
+	"antecipe/internal/service/pricing"
 )
 
 const uso = "uso: antecipe <gerar|exemplo|validar> [opções]  (antecipe <comando> -h para ver as opções)"
@@ -68,14 +68,14 @@ func gerar(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "data-base inválida:", *dataBase)
 		return 1
 	}
-	var est []dominio.Nota
+	var est []domain.Nota
 	if *estoque != "" {
-		if est, err = fontes.LerEstoqueZip(*estoque); err != nil {
+		if est, err = filesystem.LerEstoqueZip(*estoque); err != nil {
 			fmt.Fprintln(stderr, err)
 			return 2
 		}
 	}
-	err = gerador.Gerar(stdout, gerador.Opcoes{Linhas: *linhas, Semente: *semente, DataBase: db, Estoque: est, FundoNome: *fundoNome, FundoCNPJ: *fundoCNPJ})
+	err = generator.Gerar(stdout, generator.Opcoes{Linhas: *linhas, Semente: *semente, DataBase: db, Estoque: est, FundoNome: *fundoNome, FundoCNPJ: *fundoCNPJ})
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
@@ -96,12 +96,12 @@ func exemplo(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "data-base inválida:", *dataBase)
 		return 1
 	}
-	est, err := fontes.LerEstoqueZip(*estoque)
+	est, err := filesystem.LerEstoqueZip(*estoque)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
-	if err := gerador.Exemplo(stdout, db, est); err != nil {
+	if err := generator.Exemplo(stdout, db, est); err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
@@ -119,7 +119,7 @@ func validar(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if fs.Parse(args) != nil {
 		return 1
 	}
-	log := obs.NovoLogger(stderr, "info")
+	log := observability.NovoLogger(stderr, "info")
 	inicio := time.Now()
 
 	b, err := os.ReadFile(*arqRegras)
@@ -127,7 +127,7 @@ func validar(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
-	r, err := regras.Ler(b)
+	r, err := rules.Ler(b)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
@@ -145,30 +145,30 @@ func validar(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		}
 	}
 	pc, _ := cfg.PrecificacaoEfetiva(r.Precificacao)
-	calc, err := precificacao.Nova(pc)
+	calc, err := pricing.Nova(pc)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
-	est, err := fontes.LerEstoqueZip(*arqEstoque)
+	est, err := filesystem.LerEstoqueZip(*arqEstoque)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
-	sit, err := fontes.LerSituacoes(*arqSituacao)
+	sit, err := filesystem.LerSituacoes(*arqSituacao)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
-	vendidas, ef := fontes.ContextoDeEstoque(est, r.Fundo.CNPJ)
+	vendidas, ef := filesystem.ContextoDeEstoque(est, r.Fundo.CNPJ)
 
-	notas, err := csvnota.Ler(stdin, nil)
+	notas, err := csvfile.Ler(stdin, nil)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
-	s := motor.Validar(notas, r, motor.Contexto{
-		DataBase: db, Situacao: fontes.SituacaoCom(sit, cfg.Processamento.SituacaoCadastralPadrao),
+	s := engine.Validar(notas, r, engine.Contexto{
+		DataBase: db, Situacao: filesystem.SituacaoCom(sit, cfg.Processamento.SituacaoCadastralPadrao),
 		Vendidas: vendidas, Estoque: ef, Preco: calc,
 	})
 	if err := escreverResultado(stdout, s); err != nil {
@@ -182,11 +182,11 @@ func validar(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 }
 
 // escreverResultado devolve o CSV de entrada com as colunas do resultado no fim.
-func escreverResultado(w io.Writer, s motor.Saida) error {
+func escreverResultado(w io.Writer, s engine.Saida) error {
 	bw := bufio.NewWriterSize(w, 1<<20)
 	cw := csv.NewWriter(bw)
 	cw.Comma = ';'
-	cab := append(append([]string{}, csvnota.Colunas...), "STATUS", "MOTIVO", "O_QUE_FAZER", "DIAS", "DESCONTO", "VALOR_LIQUIDO")
+	cab := append(append([]string{}, csvfile.Colunas...), "STATUS", "MOTIVO", "O_QUE_FAZER", "DIAS", "DESCONTO", "VALOR_LIQUIDO")
 	if err := cw.Write(cab); err != nil {
 		return err
 	}
@@ -194,22 +194,22 @@ func escreverResultado(w io.Writer, s motor.Saida) error {
 		n := rs.Nota
 		valor, venc, aq := "", "", ""
 		if n.ErroFormato == nil {
-			valor, venc = formato.ValorCSV(n.ValorCentavos), formato.Data(n.Vencimento)
+			valor, venc = format.ValorCSV(n.ValorCentavos), format.Data(n.Vencimento)
 			if !n.Aquisicao.IsZero() {
-				aq = formato.Data(n.Aquisicao)
+				aq = format.Data(n.Aquisicao)
 			}
 		}
 		status, motivo, acao, dias, desc, liq := "APROVADA", "", "", "", "", ""
 		if n.ErroFormato == nil {
 			dias = fmt.Sprint(rs.Dias)
 		}
-		if rs.Status == dominio.Recusada {
-			t := textos.Recusa(rs.Recusas[0].Codigo, rs.Recusas[0].Dados)
+		if rs.Status == domain.Recusada {
+			t := message.Recusa(rs.Recusas[0].Codigo, rs.Recusas[0].Dados)
 			status, motivo, acao = "RECUSADA", t.Titulo+": "+t.Mensagem, t.Acao
 		} else {
-			desc, liq = formato.ValorCSV(rs.DescontoCentavos), formato.ValorCSV(rs.LiquidoCentavos)
+			desc, liq = format.ValorCSV(rs.DescontoCentavos), format.ValorCSV(rs.LiquidoCentavos)
 		}
-		c := formato.CelulaCSV
+		c := format.CelulaCSV
 		linha := []string{c(n.NomeFundo), c(n.DocFundo), c(n.NomeCedente), c(n.DocCedente), c(n.NomeSacado), c(n.DocSacado), c(n.Numero), c(n.Tipo),
 			valor, venc, aq, status, c(motivo), acao, dias, desc, liq}
 		if err := cw.Write(linha); err != nil {

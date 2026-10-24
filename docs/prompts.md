@@ -131,6 +131,47 @@ Cada entrada tem o prompt exato, o que a IA fez e o que o time fez com a respost
 
 > pode fazer assim mesmo in line
 
-**O que a IA fez:** passou a implementar as tarefas do plano em sequência nesta sessão (skill superpowers:executing-plans), com testes antes do código e um commit por tarefa. O andamento de cada tarefa fica registrado abaixo.
+**O que a IA fez:** passou a implementar as tarefas do plano em sequência nesta sessão (skill superpowers:executing-plans), com testes antes do código e um commit por tarefa.
+
+- Tarefas 1 a 8 prontas às 11:39 (esqueleto e `make up`, CNPJ, leitor de CSV, regras, juros compostos/simples com YAML, validadores e textos, motor, CLI e gerador).
+- **Medições:** leitura de 500 mil linhas em 0,44 s, motor em 0,64 s e `gerar | validar` de 500 mil linhas em 1,9 s.
+- A revisão de segurança automática do Claude Code apontou 4 problemas, todos corrigidos com teste:
+  - parâmetros numéricos extremos;
+  - chave de duplicidade burlável com zeros à esquerda;
+  - estouro na conta de concentração;
+  - injeção de fórmula no CSV de saída.
+- Como o Docker estava sem permissão, os testes de integração passaram a usar um Postgres 18 portátil.
+
+**O que o time fez com a resposta:** pediu arquitetura hexagonal (entrada #7).
+
+---
+
+## #7 · 24/10/2026 11:42 · Arquitetura hexagonal, apperrors, OpenTelemetry e pastas em inglês
+
+**Prompt (time → Claude Code):**
+
+> use arquitetura hexagonal
+> pensando em arquitetura de pasta:
+>
+> - handler para dependencias externas
+> - service para regras de negocio
+> - repositor para comunicar com o banco
+> - test end to end
+>
+> para erros use o app errors
+>
+> para observalidade em nivel mais alto use o open telemetri
+>
+> coloque o nome das pastras do projeto em ingles
+
+**O que a IA fez:** reorganizou o backend em arquitetura hexagonal com pastas em inglês:
+- `domain`: entidades, regras do fundo e portas (interfaces);
+- `service`: motor, validadores, preço, textos e casos de uso;
+- `handler`: REST e leitura do CSV;
+- `repository`: Postgres e arquivos;
+- `platform`: `apperrors`, `observability` com OpenTelemetry, `config`, `document` e `format`;
+- `test/e2e`: testes ponta a ponta.
+
+Os nomes de tipos e funções ficaram em português, porque são a linguagem do negócio (nota, cedente, sacado). Atualizou o plano.
 
 **O que o time fez com a resposta:** _(preencher)_

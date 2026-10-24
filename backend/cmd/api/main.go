@@ -11,11 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	"antecipe/internal/obs"
+	"antecipe/internal/platform/observability"
 )
 
 func main() {
-	log := obs.NovoLogger(os.Stdout, env("LOG_LEVEL", "info"))
+	log := observability.NovoLogger(os.Stdout, env("LOG_LEVEL", "info"))
 	if err := rodar(log); err != nil {
 		log.Error("api encerrada com erro", slog.String("erro", err.Error()))
 		os.Exit(1)
@@ -34,7 +34,7 @@ func rodar(log *slog.Logger) error {
 
 	srv := &http.Server{
 		Addr:              env("HTTP_ADDR", ":8080"),
-		Handler:           obs.Middleware(log, mux),
+		Handler:           observability.Middleware(log, mux),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
