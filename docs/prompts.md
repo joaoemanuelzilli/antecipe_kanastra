@@ -533,3 +533,19 @@ Meus lotes: cards e Novo envio compartilhados com a Dashboard; busca, situação
 
 **O que o time fez com a resposta:** _(preencher)_
 
+---
+
+## #21 · 24/10/2026 · Pull e rodar de novo
+
+**Prompt (time → Claude Code):**
+
+> git pull e roda dnv
+
+**O que a IA fez:**
+
+1. **Fez o pull** de mais 3 commits do front: animação de carregamento na confirmação da cessão, vídeo que toca ao entrar na seção e mais contraste na navegação. Não havia dependência nova, então o Vite recarregou sozinho.
+2. **Reconstruiu o Docker** (`make up`) e testou: front, API e assistente responderam nas portas 3000 e 5173, e o exemplo concluiu.
+3. **Investigou por que o exemplo deu 14 aprovadas e 9 recusadas** (em vez de 13 e 10). O banco tinha 2 cessões confirmadas pelo front, com 849.734 notas, que diluíram a SERRALHERIA de 12,5% para 0,53% da carteira do ANTECIPE, e a concentração deixou de barrar. É o comportamento correto para esse estado do banco, e confirmou que a cessão aguenta 850 mil notas. Para voltar ao estado do gabarito: `make limpar && make up`.
+
+**O que o time fez com a resposta:** _(preencher)_
+
