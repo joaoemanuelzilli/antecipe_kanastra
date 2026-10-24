@@ -15,10 +15,14 @@ Uma pequena empresa vendeu a prazo e precisa do dinheiro hoje. Ela pode vender a
 - **Simular e depois vender.** A cessão é idempotente e segura contra venda dupla, inclusive com confirmações simultâneas (teste ponta a ponta e `make demo-concorrencia`).
 - **Regras sem deploy.** O gestor vê o catálogo, testa o impacto de uma mudança no último lote (prévia) e publica uma nova versão. Cada lote guarda a versão e o preço que usou.
 - **A mesma validação pela tela e pela API**, mais uma CLI no estilo Unix que usa o mesmo motor.
+- **Assistente de IA.** Um painel onde a empresa pergunta em linguagem natural ("como foi o lote?", "por que a nota X deu erro?", "quantas foram recusadas?").
+  - É um serviço à parte (Agno + AgentOS, modelo via OpenRouter).
+  - Só consulta a API e responde com os textos oficiais das recusas.
+  - É opcional: sem chave, todo o resto funciona.
 
 ## Tecnologias
 
-Go 1.27 (arquitetura hexagonal), PostgreSQL 18, OpenTelemetry (Jaeger + métricas Prometheus), React 19 + Vite, Docker Compose e Makefile.
+Go 1.27 (arquitetura hexagonal), PostgreSQL 18, OpenTelemetry (Jaeger + métricas Prometheus), React 19 + Vite, Python 3.13 com Agno + AgentOS (assistente de IA, modelo via OpenRouter), Docker Compose e Makefile.
 
 ## Principais decisões
 
@@ -40,6 +44,11 @@ Go 1.27 (arquitetura hexagonal), PostgreSQL 18, OpenTelemetry (Jaeger + métrica
 6. **Concorrência na venda.** `FOR UPDATE` no lote, advisory lock por fundo, concentração recalculada sobre o estoque atual e `ON CONFLICT DO NOTHING`.
 7. **Uma linha ruim não derruba o lote.** Ela vira a recusa `FORMATO_INVALIDO`, com coluna e problema. O arquivo inteiro só é recusado por problema estrutural.
 8. **Logs só com metadados**, com um teste que falha se aparecer qualquer dado do CSV. Segredos ficam só no `.env` gerado pelo `make up`.
+9. **IA para explicar, nunca para decidir.**
+   - Aprovar, recusar e precificar continuam determinísticos no Go.
+   - O assistente é mais um cliente da API: 4 ferramentas só de leitura, sem acesso às tabelas do backend. Usa o mesmo Postgres só para as sessões do chat, no schema `ai`.
+   - Ele repete os textos oficiais das recusas e recebe valores já formatados, então não inventa motivo nem erra conta.
+   - O teste de logs do serviço pegou o cliente HTTP logando a busca do usuário, e isso foi corrigido.
 
 ## Resultados
 
@@ -55,7 +64,8 @@ Pela CLI, sem banco, o mesmo motor faz `gerar | validar` de 500 mil linhas em 1,
 
 - Consulta real à Receita: a situação cadastral é simulada (`data/situacao_cadastral.csv`).
 - Login de várias empresas, assinatura da cessão, registradora e pagamento.
-- Autenticação do gestor mais forte que uma senha em header.
+- Autenticação do gestor mais forte que uma senha em header. O assistente de IA também está sem autenticação (o AgentOS aceita JWT).
+- Os dados das notas que o assistente consulta vão para o OpenRouter e para o provedor do modelo. No desafio os dados são simulados.
 - Deploy público.
 
 ## Próximos passos
