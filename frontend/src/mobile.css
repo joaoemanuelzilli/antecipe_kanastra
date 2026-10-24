@@ -31,3 +31,21 @@
   .new-lot-panels{flex-direction:column;gap:24px}.new-lot-form-panel{padding:0 0 16px;width:100%;gap:28px;border:0;border-radius:0}.new-lot-heading h2{font-size:26px;line-height:1.3}.new-lot-heading p{font-size:14px;line-height:1.7;margin-top:10px}.new-lot-info{width:44px;height:44px;display:grid;place-items:center;align-self:flex-start}.new-lot-fields{gap:14px}.new-lot-input{height:56px;border-radius:20px}.new-lot-dropzone{height:160px;border-radius:20px}.new-lot-drop-copy{font-size:14px;line-height:1.6}.new-lot-submit{height:52px;min-height:52px;border-radius:18px;font-size:15px}.new-lot-actions{gap:14px}.new-lot-example{min-height:48px;font-size:14px}.new-lot-onboarding{padding:24px 20px;border-radius:20px;gap:24px;background:#f5f9f6}.new-lot-step-copy p{font-size:14px;line-height:1.6}
   .document-loading-panel{width:100%;padding:24px 0;border:0;box-shadow:none;border-radius:0;gap:32px;margin-block:auto}.document-loading-media{border-radius:20px}.document-loading-status-row>p{font-size:14px}.document-loading-cancel{min-height:48px;font-size:15px}
 }
+/* Navegação inferior: três destinos, sem repetir a marca do portal. */
+@media(max-width:760px){
+  .app-rail{left:0;right:0;bottom:0;height:auto;width:100%;border-top:1px solid #e4ebe6;background:#fff;padding-bottom:env(safe-area-inset-bottom)}
+  .rail-inner{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));height:76px;padding:6px 20px;gap:12px;background:#fff;border:0;border-radius:0;box-shadow:none}
+  .rail-inner>.rail-brand{display:none}
+  .rail-inner>.rail-nav{display:contents}
+  .rail-inner .rail-link{position:relative;width:100%;height:64px;min-width:0;border:0;border-radius:16px;padding:8px;gap:6px;background:transparent;color:#77857b}
+  .rail-inner .rail-link img,.rail-inner .rail-link>svg{width:24px;height:24px;flex-shrink:0}
+  .rail-inner .rail-link:not(.active) img{opacity:.65}
+  .rail-inner .rail-link.active{background:#edf8f1;color:#004639;border:0}
+  .rail-inner .rail-link.active img{filter:brightness(0) saturate(100%) invert(19%) sepia(33%) saturate(1227%) hue-rotate(117deg) brightness(92%) contrast(101%)}
+  .rail-inner .rail-link.active>svg{color:#004639}
+  .rail-inner .rail-label{font-size:11px;line-height:15px;font-weight:500;letter-spacing:0}
+  .rail-inner .rail-link.active .rail-label{font-weight:600}
+  .rail-inner:has([aria-label="Navegação do gestor"]){grid-template-columns:1fr}
+  .rail-inner:has([aria-label="Navegação do gestor"]) .rail-link{max-width:180px;margin-inline:auto}
+  .app-workspace{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+}
