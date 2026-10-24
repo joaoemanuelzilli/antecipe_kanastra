@@ -461,3 +461,15 @@ Meus lotes: cards e Novo envio compartilhados com a Dashboard; busca, situação
 
 **O que o time fez com a resposta:** _(preencher)_
 
+---
+
+## #17 · 24/10/2026 · Onde está o arquivo de 1 milhão
+
+**Prompt (time → Claude Code):**
+
+> cade o arquivo?
+
+**O que a IA fez:** informou o caminho do `amostras/lote_1m.csv`. A pasta `amostras/` fica fora do git (`.gitignore`), por isso não aparece no GitHub e o VS Code a mostra apagada.
+
+**O que o time fez com a resposta:** _(preencher)_
+
