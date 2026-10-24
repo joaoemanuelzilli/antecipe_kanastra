@@ -221,6 +221,7 @@ func (h *Handlers) baixarNotas(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	w.Header().Set("Content-Disposition", `attachment; filename="lote-`+id+`.csv"`)
+	_, _ = w.Write([]byte("\xEF\xBB\xBF")) // BOM: o Excel abre os acentos certos
 	cw := csv.NewWriter(w)
 	cw.Comma = ';'
 	_ = cw.Write(append(append([]string{}, csvfile.Colunas...), "STATUS", "MOTIVO", "O_QUE_FAZER", "DIAS", "DESCONTO", "VALOR_LIQUIDO"))

@@ -20,7 +20,9 @@ type VersaoRegras struct {
 
 // EstoqueRepository dá ao motor o que já foi vendido e as somas do fundo.
 type EstoqueRepository interface {
-	ContextoMotor(ctx context.Context, fundoCNPJ string) (map[string]Vendida, EstoqueFundo, error)
+	// ignorarCessao (opcional) deixa de fora as notas de uma cessão: a prévia de um lote já cedido
+	// não pode contar as notas dele mesmo como duplicadas.
+	ContextoMotor(ctx context.Context, fundoCNPJ, ignorarCessao string) (map[string]Vendida, EstoqueFundo, error)
 }
 
 // SituacaoRepository consulta a situação cadastral (fonte simulada).

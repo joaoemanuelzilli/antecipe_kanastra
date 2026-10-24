@@ -168,6 +168,10 @@ func lerCabecalho(cr *csv.Reader) (map[string]int, error) {
 			break
 		}
 	}
+	if len(rec) == 1 && strings.Count(rec[0], ",") >= 3 {
+		return nil, &ErroArquivo{Codigo: "CABECALHO_INVALIDO", Mensagem: "O arquivo parece usar vírgula como separador. Use ponto e vírgula (;) entre as colunas.",
+			Detalhes: []Detalhe{{Linha: 1, Campo: "separador", Problema: "use ponto e vírgula (;)"}}}
+	}
 	idx := make(map[string]int, len(rec))
 	for i, nome := range rec {
 		idx[strings.ToUpper(strings.TrimSpace(nome))] = i
@@ -417,7 +421,13 @@ func cp1252ParaUTF8(b []byte) []byte {
 // Leitor é o adaptador do formato CSV para a porta domain.LeitorNotas.
 type Leitor struct{}
 
+// Ler devolve os erros de arquivo já como apperrors (o serviço não conhece este adaptador).
 func (Leitor) Ler(r io.Reader, aoAvancar func(lidas int)) ([]domain.Nota, error) {
-	return Ler(r, aoAvancar)
+	notas, err := Ler(r, aoAvancar)
+	var ea *ErroArquivo
+	if errors.As(err, &ea) {
+		return nil, ea.AppError()
+	}
+	return notas, err
 }
 func (Leitor) ContarLinhas(r io.Reader) (int, error) { return ContarLinhas(r) }

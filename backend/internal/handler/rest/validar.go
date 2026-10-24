@@ -2,6 +2,7 @@ package rest
 
 import (
 	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -74,14 +75,13 @@ func (h *Handlers) validar(w http.ResponseWriter, r *http.Request) {
 		}
 		// reaproveita o mesmo leitor do CSV para as notas em JSON (mesmas regras de formato)
 		var b bytes.Buffer
-		b.WriteString(strings.Join(csvfile.Colunas, ";") + "\n")
+		cw := csv.NewWriter(&b)
+		cw.Comma = ';'
+		_ = cw.Write(csvfile.Colunas)
 		for _, n := range in.Notas {
-			campos := []string{n.NomeFundo, n.DocFundo, n.NomeCedente, n.DocCedente, n.NomeSacado, n.DocSacado, n.NuDocumento, n.TipoRecebivel, n.ValorNominal, n.DataVencimentoOriginal, n.DataAquisicao}
-			for i, c := range campos {
-				campos[i] = strings.NewReplacer(";", ",", "\n", " ", "\r", " ").Replace(c)
-			}
-			b.WriteString(strings.Join(campos, ";") + "\n")
+			_ = cw.Write([]string{n.NomeFundo, n.DocFundo, n.NomeCedente, n.DocCedente, n.NomeSacado, n.DocSacado, n.NuDocumento, n.TipoRecebivel, n.ValorNominal, n.DataVencimentoOriginal, n.DataAquisicao})
 		}
+		cw.Flush()
 		csvTexto = b.Bytes()
 	}
 	notas, err := csvfile.Leitor{}.Ler(bytes.NewReader(csvTexto), nil)

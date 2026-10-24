@@ -106,7 +106,7 @@ func (s *Servico) processar(ctx context.Context, t trabalho) {
 		return
 	}
 	trocarEtapa(domain.EtapaValidando)
-	ectx, err := s.contextoMotor(ctx, versao, lote.Precificacao, lote.DataBase)
+	ectx, err := s.contextoMotor(ctx, versao, lote.Precificacao, lote.DataBase, "")
 	if err != nil {
 		falhar(errFalhaGenerica, err)
 		return

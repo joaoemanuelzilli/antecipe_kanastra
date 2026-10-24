@@ -32,6 +32,7 @@ func rodar(amb bootstrap.Ambiente, log *slog.Logger) error {
 	if nome == "" {
 		nome = "antecipe-api"
 	}
+	observability.EncaminharErros(log)
 	desligarOtel, metricas, err := observability.Iniciar(ctx, observability.Config{ServiceName: nome, Version: "1.0.0"})
 	if err != nil {
 		return err

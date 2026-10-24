@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -62,6 +63,13 @@ func Iniciar(ctx context.Context, c Config) (func(context.Context) error, http.H
 		return errors.Join(tp.Shutdown(ctx), mp.Shutdown(ctx))
 	}
 	return desligar, promhttp.HandlerFor(reg, promhttp.HandlerOpts{}), nil
+}
+
+// EncaminharErros manda os erros internos do OpenTelemetry (ex.: exportador sem conexão) para o log JSON.
+func EncaminharErros(log *slog.Logger) {
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		log.Warn("erro do opentelemetry", slog.String("erro", err.Error()))
+	}))
 }
 
 // Tracer devolve o tracer da aplicação (usa o provider global).

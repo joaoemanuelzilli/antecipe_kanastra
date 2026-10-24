@@ -1,0 +1,11 @@
+# Contexto de build enxuto e sem segredos
+.git
+.env
+.env.*
+amostras/
+context/
+docs/
+frontend/node_modules/
+frontend/dist/
+.superpowers/
+**/*_test.go

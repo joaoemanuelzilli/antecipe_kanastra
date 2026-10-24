@@ -2,8 +2,13 @@ package postgres
 
 import (
 	"context"
+	"errors"
+	"io"
+	"net"
 	"os"
+	"strings"
 	"testing"
+	"time"
 
 	"antecipe/internal/domain/rules"
 	"antecipe/internal/platform/document"
@@ -105,7 +110,7 @@ func TestContextoMotor(t *testing.T) {
 	if err := r.SemearSeVazio(ctx, semente(t)); err != nil {
 		t.Fatal(err)
 	}
-	vendidas, est, err := r.ContextoMotor(ctx, "92.234.400/0001-80")
+	vendidas, est, err := r.ContextoMotor(ctx, "92.234.400/0001-80", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,4 +130,64 @@ func TestContextoMotor(t *testing.T) {
 	if err != nil || sit["11122233000183"] != "INAPTA" {
 		t.Fatalf("situações = %v, %v", sit, err)
 	}
+}
+
+// TestAbrirEsperaOBanco simula o Postgres que ainda não aceita TCP na subida do compose:
+// a porta só passa a responder depois de 1,5 s, e Abrir precisa esperar em vez de falhar.
+func TestAbrirEsperaOBanco(t *testing.T) {
+	url := os.Getenv("TEST_DATABASE_URL")
+	if url == "" {
+		t.Skip("TEST_DATABASE_URL não definida")
+	}
+	destino, err := pgconnHostPort(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	porta := ln.Addr().String()
+	ln.Close() // nada escutando por enquanto
+	go func() {
+		time.Sleep(1500 * time.Millisecond)
+		l, err := net.Listen("tcp", porta)
+		if err != nil {
+			return
+		}
+		defer l.Close()
+		for {
+			c, err := l.Accept()
+			if err != nil {
+				return
+			}
+			go encaminhar(c, destino)
+		}
+	}()
+	urlAtrasada := strings.Replace(url, destino, porta, 1)
+	r, err := AbrirComEspera(context.Background(), urlAtrasada, 20, 200*time.Millisecond)
+	if err != nil {
+		t.Fatalf("Abrir desistiu cedo: %v", err)
+	}
+	r.Fechar()
+}
+
+func pgconnHostPort(url string) (string, error) {
+	i := strings.Index(url, "@")
+	j := strings.Index(url[i:], "/")
+	if i < 0 || j < 0 {
+		return "", errors.New("url sem host")
+	}
+	return url[i+1 : i+j], nil
+}
+
+func encaminhar(c net.Conn, destino string) {
+	d, err := net.Dial("tcp", destino)
+	if err != nil {
+		c.Close()
+		return
+	}
+	go func() { io.Copy(d, c); d.Close() }()
+	io.Copy(c, d)
+	c.Close()
 }

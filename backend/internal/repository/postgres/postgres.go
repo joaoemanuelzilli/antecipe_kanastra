@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"sort"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -24,8 +25,14 @@ type Repo struct {
 	Pool *pgxpool.Pool
 }
 
-// Abrir conecta e confere a conexão.
+// Abrir conecta e confere a conexão, esperando até 30 s pelo banco (na subida do compose
+// o Postgres pode passar no healthcheck antes de aceitar TCP).
 func Abrir(ctx context.Context, url string) (*Repo, error) {
+	return AbrirComEspera(ctx, url, 30, time.Second)
+}
+
+// AbrirComEspera tenta conectar várias vezes antes de desistir.
+func AbrirComEspera(ctx context.Context, url string, tentativas int, intervalo time.Duration) (*Repo, error) {
 	cfg, err := pgxpool.ParseConfig(url)
 	if err != nil {
 		return nil, fmt.Errorf("postgres: configuração inválida")
@@ -35,11 +42,22 @@ func Abrir(ctx context.Context, url string) (*Repo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("postgres: %w", err)
 	}
-	if err := pool.Ping(ctx); err != nil {
-		pool.Close()
-		return nil, fmt.Errorf("postgres: banco indisponível: %w", err)
+	for i := 1; ; i++ {
+		err = pool.Ping(ctx)
+		if err == nil {
+			return &Repo{Pool: pool}, nil
+		}
+		if i >= tentativas {
+			pool.Close()
+			return nil, fmt.Errorf("postgres: banco indisponível: %w", err)
+		}
+		select {
+		case <-ctx.Done():
+			pool.Close()
+			return nil, ctx.Err()
+		case <-time.After(intervalo):
+		}
 	}
-	return &Repo{Pool: pool}, nil
 }
 
 // Fechar encerra o pool.

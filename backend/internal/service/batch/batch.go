@@ -294,19 +294,19 @@ func (s *Servico) ValidarAgora(ctx context.Context, notas []domain.Nota, dataBas
 	if dataBase != nil {
 		db = *dataBase
 	}
-	ectx, err := s.contextoMotor(ctx, atual.Versao, atual.Precificacao, db)
+	ectx, err := s.contextoMotor(ctx, atual.Versao, atual.Precificacao, db, "")
 	if err != nil {
 		return Validacao{}, err
 	}
 	return Validacao{Saida: engine.Validar(notas, atual.Versao.Regras, ectx), Precificacao: atual.Precificacao, RegrasVersao: atual.Versao.Numero, DataBase: db}, nil
 }
 
-func (s *Servico) contextoMotor(ctx context.Context, v domain.VersaoRegras, p domain.Precificacao, dataBase time.Time) (engine.Contexto, error) {
+func (s *Servico) contextoMotor(ctx context.Context, v domain.VersaoRegras, p domain.Precificacao, dataBase time.Time, ignorarCessao string) (engine.Contexto, error) {
 	calc, err := pricing.Nova(p)
 	if err != nil {
 		return engine.Contexto{}, apperrors.Unavailable("PRECIFICACAO_INVALIDA", "A configuração de preço está inválida. Avise o gestor do fundo.").Wrap(err)
 	}
-	vendidas, est, err := s.d.Estoque.ContextoMotor(ctx, v.Regras.Fundo.CNPJ)
+	vendidas, est, err := s.d.Estoque.ContextoMotor(ctx, v.Regras.Fundo.CNPJ, ignorarCessao)
 	if err != nil {
 		return engine.Contexto{}, err
 	}
@@ -350,8 +350,9 @@ func appendInt(b []byte, n int) []byte {
 }
 
 // Simular roda o motor com regras e preço quaisquer (usado pela prévia do gestor). Não grava nada.
-func (s *Servico) Simular(ctx context.Context, notas []domain.Nota, r rules.Regras, p domain.Precificacao, dataBase time.Time) (engine.Saida, error) {
-	ectx, err := s.contextoMotor(ctx, domain.VersaoRegras{Regras: r}, p, dataBase)
+// ignorarCessao deixa de fora as notas que o próprio lote já vendeu.
+func (s *Servico) Simular(ctx context.Context, notas []domain.Nota, r rules.Regras, p domain.Precificacao, dataBase time.Time, ignorarCessao string) (engine.Saida, error) {
+	ectx, err := s.contextoMotor(ctx, domain.VersaoRegras{Regras: r}, p, dataBase, ignorarCessao)
 	if err != nil {
 		return engine.Saida{}, err
 	}

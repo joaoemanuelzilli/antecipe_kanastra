@@ -43,7 +43,7 @@ func TestTextoValorMinimo(t *testing.T) {
 
 func TestTextoConcentracao(t *testing.T) {
 	x := Recusa("CONCENTRACAO_MAXIMA_SACADO", map[string]any{"percentual_resultante": 12.61, "limite": 10.0, "grupo": "58206002", "grupo_nome": "SERRALHERIA VIOLETA S.A."})
-	if x.Mensagem != "Com esta nota, SERRALHERIA VIOLETA S.A. ficaria com 12,6% da carteira do fundo, e o limite é 10%." {
+	if x.Mensagem != "Com esta nota, SERRALHERIA VIOLETA S.A. ficaria com 12,61% da carteira do fundo, e o limite é 10%." {
 		t.Fatalf("mensagem = %q", x.Mensagem)
 	}
 }
@@ -63,7 +63,7 @@ func TestTextoDuplicidadeValorDiferente(t *testing.T) {
 
 func TestTextoFormatoInvalido(t *testing.T) {
 	x := Recusa("FORMATO_INVALIDO", map[string]any{"campo": "DATA_VENCIMENTO_ORIGINAL", "valor": "31/02/2026", "problema": "não é uma data válida (use dd/mm/aaaa)", "linha": 1204})
-	if x.Mensagem != `Na coluna DATA_VENCIMENTO_ORIGINAL, o valor "31/02/2026" não é uma data válida (use dd/mm/aaaa).` {
+	if x.Mensagem != `Na coluna "vencimento" (DATA_VENCIMENTO_ORIGINAL), o valor "31/02/2026" não é uma data válida (use dd/mm/aaaa).` {
 		t.Fatalf("mensagem = %q", x.Mensagem)
 	}
 }
@@ -108,5 +108,19 @@ func TestCodigoDesconhecido(t *testing.T) {
 	x := Recusa("REGRA_X", nil)
 	if x.Titulo == "" || x.Mensagem == "" {
 		t.Fatalf("texto genérico ausente: %+v", x)
+	}
+}
+
+func TestTextoCampoVazio(t *testing.T) {
+	x := Recusa("FORMATO_INVALIDO", map[string]any{"campo": "VALOR_NOMINAL", "valor": "", "problema": "está vazio", "linha": 3})
+	if x.Mensagem != `A coluna "valor" (VALOR_NOMINAL) está vazia.` {
+		t.Fatalf("mensagem = %q", x.Mensagem)
+	}
+}
+
+func TestTextoLimiteComDecimais(t *testing.T) {
+	x := Recusa("CONCENTRACAO_MAXIMA_CEDENTE", map[string]any{"percentual_resultante": 10.04, "limite": 7.5, "grupo": "x", "grupo_nome": "Y"})
+	if x.Mensagem != "Com esta nota, sua empresa ficaria com 10,04% da carteira do fundo, e o limite é 7,5%." {
+		t.Fatalf("mensagem = %q", x.Mensagem)
 	}
 }

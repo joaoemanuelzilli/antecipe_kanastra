@@ -5,6 +5,7 @@ package message
 import (
 	"encoding/json"
 	"strconv"
+	"strings"
 
 	"antecipe/internal/platform/format"
 )
@@ -85,9 +86,9 @@ func Recusa(codigo string, dados map[string]any) Texto {
 	case "PRAZO_MINIMO":
 		t.Mensagem = "Esta nota vence em " + format.Inteiro(int(d.inteiro("dias"))) + " dias e o fundo compra notas com pelo menos " + format.Inteiro(int(d.inteiro("minimo"))) + " dias."
 	case "CONCENTRACAO_MAXIMA_SACADO":
-		t.Mensagem = "Com esta nota, " + d.texto("grupo_nome") + " ficaria com " + format.Percentual(d.real("percentual_resultante"), 1) + " da carteira do fundo, e o limite é " + format.Percentual(d.real("limite"), 0) + "."
+		t.Mensagem = "Com esta nota, " + d.texto("grupo_nome") + " ficaria com " + format.Percentual(d.real("percentual_resultante"), 2) + " da carteira do fundo, e o limite é " + limite(d.real("limite")) + "."
 	case "CONCENTRACAO_MAXIMA_CEDENTE":
-		t.Mensagem = "Com esta nota, sua empresa ficaria com " + format.Percentual(d.real("percentual_resultante"), 1) + " da carteira do fundo, e o limite é " + format.Percentual(d.real("limite"), 0) + "."
+		t.Mensagem = "Com esta nota, sua empresa ficaria com " + format.Percentual(d.real("percentual_resultante"), 2) + " da carteira do fundo, e o limite é " + limite(d.real("limite")) + "."
 	case "DUPLICIDADE":
 		t.Mensagem = "Esta nota (nº " + d.texto("numero") + ", vencimento " + format.DataISO(d.texto("vencimento")) + ") já foi cedida a um fundo em " + format.DataISO(d.texto("vendida_em")) + "."
 		if orig, atual := d.inteiro("valor_original_centavos"), d.inteiro("valor_centavos"); orig > 0 && orig != atual {
@@ -96,15 +97,41 @@ func Recusa(codigo string, dados map[string]any) Texto {
 	case "DUPLICADA_NO_ARQUIVO":
 		t.Mensagem = "Esta nota já aparece na linha " + format.Inteiro(int(d.inteiro("linha_original"))) + " deste arquivo."
 	case "FORMATO_INVALIDO":
-		if d.texto("campo") == "linha" {
+		campo := d.texto("campo")
+		switch {
+		case campo == "linha":
 			t.Mensagem = "Esta linha " + d.texto("problema") + "."
-		} else {
-			t.Mensagem = "Na coluna " + d.texto("campo") + ", o valor \"" + d.texto("valor") + "\" " + d.texto("problema") + "."
+		case d.texto("valor") == "":
+			t.Mensagem = "A coluna \"" + nomeColuna(campo) + "\" (" + campo + ") está vazia."
+		default:
+			t.Mensagem = "Na coluna \"" + nomeColuna(campo) + "\" (" + campo + "), o valor \"" + d.texto("valor") + "\" " + d.texto("problema") + "."
 		}
 	default:
 		t.Mensagem = "Esta nota não cumpriu a regra " + codigo + " do fundo."
 	}
 	return t
+}
+
+var colunas = map[string]string{
+	"NOME_FUNDO": "nome do fundo", "DOC_FUNDO": "CNPJ do fundo", "NOME_CEDENTE": "nome da empresa", "DOC_CEDENTE": "CNPJ da empresa",
+	"NOME_SACADO": "nome do cliente", "DOC_SACADO": "CNPJ do cliente", "NU_DOCUMENTO": "número da nota", "TIPO_RECEBIVEL": "tipo",
+	"VALOR_NOMINAL": "valor", "DATA_VENCIMENTO_ORIGINAL": "vencimento", "DATA_AQUISICAO": "data de aquisição",
+}
+
+func nomeColuna(c string) string {
+	if n, ok := colunas[c]; ok {
+		return n
+	}
+	return c
+}
+
+// limite mostra o percentual sem casas quando é inteiro (10%) e com até 2 casas quando não é (7,5%).
+func limite(f float64) string {
+	if f == float64(int64(f)) {
+		return format.Percentual(f, 0)
+	}
+	s := format.Percentual(f, 2)
+	return strings.Replace(strings.Replace(s, "0%", "%", 1), ",%", "%", 1)
 }
 
 type leitor map[string]any

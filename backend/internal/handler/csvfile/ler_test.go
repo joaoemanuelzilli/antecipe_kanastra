@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"antecipe/internal/domain"
+	"antecipe/internal/platform/apperrors"
 )
 
 const cab = "NOME_FUNDO;DOC_FUNDO;NOME_CEDENTE;DOC_CEDENTE;NOME_SACADO;DOC_SACADO;NU_DOCUMENTO;TIPO_RECEBIVEL;VALOR_NOMINAL;DATA_VENCIMENTO_ORIGINAL;DATA_AQUISICAO"
@@ -232,5 +233,21 @@ func TestLerValorAbsurdo(t *testing.T) {
 	}
 	if n := ler(t, cab+"\n"+linha("A", "9.999.999.999,99", "07/10/2026", ""))[0]; n.ErroFormato != nil || n.ValorCentavos != 999_999_999_999 {
 		t.Fatalf("limite exato: %+v", n)
+	}
+}
+
+func TestLerSeparadorVirgula(t *testing.T) {
+	_, err := Ler(strings.NewReader(strings.ReplaceAll(cab, ";", ",")+"\n1,2\n"), nil)
+	var ea *ErroArquivo
+	if !errors.As(err, &ea) || ea.Codigo != "CABECALHO_INVALIDO" || ea.Mensagem != "O arquivo parece usar vírgula como separador. Use ponto e vírgula (;) entre as colunas." {
+		t.Fatalf("erro: %#v", err)
+	}
+}
+
+func TestLeitorDevolveAppError(t *testing.T) {
+	_, err := Leitor{}.Ler(strings.NewReader(""), nil)
+	var ae *apperrors.Error
+	if !errors.As(err, &ae) || ae.Status != 422 || ae.Code != "ARQUIVO_VAZIO" {
+		t.Fatalf("erro: %#v", err)
 	}
 }

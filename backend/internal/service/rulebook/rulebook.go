@@ -19,7 +19,7 @@ import (
 
 // Simulador roda o motor sem gravar (o serviço de lotes implementa).
 type Simulador interface {
-	Simular(ctx context.Context, notas []domain.Nota, r rules.Regras, p domain.Precificacao, dataBase time.Time) (engine.Saida, error)
+	Simular(ctx context.Context, notas []domain.Nota, r rules.Regras, p domain.Precificacao, dataBase time.Time, ignorarCessao string) (engine.Saida, error)
 }
 
 type Servico struct {
@@ -143,7 +143,11 @@ func (s *Servico) Previa(ctx context.Context, r rules.Regras, loteID string) (Pr
 		return Previa{}, err
 	}
 	prec, _ := s.cfg.Obter().PrecificacaoEfetiva(r.Precificacao)
-	saida, err := s.sim.Simular(ctx, notas, r, prec, l.DataBase)
+	ignorar := ""
+	if l.Cessao != nil {
+		ignorar = l.Cessao.ID
+	}
+	saida, err := s.sim.Simular(ctx, notas, r, prec, l.DataBase, ignorar)
 	if err != nil {
 		return Previa{}, err
 	}

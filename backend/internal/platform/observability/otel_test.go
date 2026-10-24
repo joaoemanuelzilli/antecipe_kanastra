@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -101,4 +102,14 @@ func nomes(s []sdktrace.ReadOnlySpan) []string {
 		out = append(out, x.Name())
 	}
 	return out
+}
+
+func TestErrosDoOtelViramLogJSON(t *testing.T) {
+	var buf bytes.Buffer
+	EncaminharErros(NovoLogger(&buf, "info"))
+	otel.Handle(errors.New("traces export: connection refused"))
+	var linha map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &linha); err != nil || linha["msg"] != "erro do opentelemetry" {
+		t.Fatalf("log = %q (%v)", buf.String(), err)
+	}
 }

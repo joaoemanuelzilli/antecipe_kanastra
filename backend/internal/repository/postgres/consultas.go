@@ -21,9 +21,13 @@ var (
 )
 
 // ContextoMotor carrega as chaves já vendidas (todos os fundos) e as somas do fundo, em consultas agrupadas.
-func (r *Repo) ContextoMotor(ctx context.Context, fundoCNPJ string) (map[string]domain.Vendida, domain.EstoqueFundo, error) {
+func (r *Repo) ContextoMotor(ctx context.Context, fundoCNPJ, ignorarCessao string) (map[string]domain.Vendida, domain.EstoqueFundo, error) {
 	est := domain.EstoqueFundo{PorSacado: map[string]int64{}, PorCedente: map[string]int64{}}
-	rows, err := r.Pool.Query(ctx, `SELECT chave, aquisicao, valor_centavos FROM estoque`)
+	var ignorar any
+	if uuidValido(ignorarCessao) {
+		ignorar = ignorarCessao
+	}
+	rows, err := r.Pool.Query(ctx, `SELECT chave, aquisicao, valor_centavos FROM estoque WHERE ($1::uuid IS NULL OR cessao_id IS DISTINCT FROM $1::uuid)`, ignorar)
 	if err != nil {
 		return nil, est, err
 	}
@@ -48,7 +52,8 @@ func (r *Repo) ContextoMotor(ctx context.Context, fundoCNPJ string) (map[string]
 
 	fundo := document.Normalizar(fundoCNPJ)
 	somar := func(coluna string, destino map[string]int64) error {
-		rows, err := r.Pool.Query(ctx, `SELECT `+coluna+`, sum(valor_centavos)::bigint FROM estoque WHERE fundo_doc = $1 GROUP BY 1`, fundo)
+		rows, err := r.Pool.Query(ctx, `SELECT `+coluna+`, sum(valor_centavos)::bigint FROM estoque
+			WHERE fundo_doc = $1 AND ($2::uuid IS NULL OR cessao_id IS DISTINCT FROM $2::uuid) GROUP BY 1`, fundo, ignorar)
 		if err != nil {
 			return err
 		}

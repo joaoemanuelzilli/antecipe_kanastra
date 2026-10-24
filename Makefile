@@ -47,16 +47,16 @@ test-integracao: .env ## Todos os testes, inclusive banco e ponta a ponta (Postg
 	set -a && . ./.env && set +a && cd backend && \
 		TEST_DATABASE_URL="postgres://antecipe:$${POSTGRES_PASSWORD}@localhost:5433/antecipe_test?sslmode=disable" go test -count=1 -p 1 ./...
 
-gerar: ## Gera um lote de teste em amostras/ (ex.: make gerar N=500000)
+gerar: .env ## Gera um lote de teste em amostras/ (ex.: make gerar N=500000)
 	@mkdir -p amostras
 	docker compose run --rm --no-deps -T api antecipe gerar --linhas $(N) --semente $(SEMENTE) --estoque data/estoque_antecipe.zip > amostras/lote_$(N).csv
 	@echo "Gerado amostras/lote_$(N).csv"
 
-carga: ## Mede lotes de 100k, 250k e 500k linhas (precisa do make up)
+carga: .env ## Mede lotes de 100k, 250k e 500k linhas (precisa do make up)
 	./scripts/carga.sh
 
 check: ## Procura segredos no repositório (gitleaks)
 	docker run --rm -v "$$PWD:/repo" zricethezav/gitleaks:v8.30.1 detect --source /repo --no-banner
 
-demo-concorrencia: ## Mostra duas cessões simultâneas sem venda duplicada (precisa do make up)
+demo-concorrencia: .env ## Mostra duas cessões simultâneas sem venda duplicada (precisa do make up)
 	./scripts/demo-concorrencia.sh
