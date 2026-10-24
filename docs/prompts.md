@@ -517,3 +517,19 @@ Meus lotes: cards e Novo envio compartilhados com a Dashboard; busca, situação
 
 **O que o time fez com a resposta:** _(preencher)_
 
+---
+
+## #20 · 24/10/2026 · Pull e rodar o front local
+
+**Prompt (time → Claude Code):**
+
+> git pull e roda local o front pra testar
+
+**O que a IA fez:**
+
+1. **Fez o pull** de mais 4 commits do front: landing animada com vídeo, `VITE_AI_BASE_URL` no build e ajustes de paginação. Conferiu que o Dockerfile continua compatível (com a variável vazia, o assistente fica em `/ai` no mesmo endereço).
+2. **Subiu o build de produção no Docker** (`make up`, http://localhost:3000): front 200, vídeo da landing 200, API ok, assistente 200.
+3. **Subiu o servidor de desenvolvimento do Vite** (http://localhost:5173), com as dependências instaladas pelo espelho `registry.yarnpkg.com` por causa do firewall da rede. O proxy repassa `/api` para a porta 8080 e `/ai` para a 3000, e os dois responderam.
+
+**O que o time fez com a resposta:** _(preencher)_
+
