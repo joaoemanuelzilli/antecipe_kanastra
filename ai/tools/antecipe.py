@@ -9,12 +9,16 @@ envia lote, confirma cessão ou muda regra.
 - Valores saem em reais e datas em dd/mm/aaaa: o modelo não converte nada.
 - O lote padrão é o que está aberto na tela; o front o manda em `dependencies.lote_id`.
 - Logs: só a rota (sem valores), o status e a duração. Nenhum dado do CSV vai para o log.
+- A API só mostra um lote de conta à dona e aos gestores, então as consultas vão com a sessão de quem
+  pergunta (`SESSAO_DO_USUARIO`, preenchida por requisição em app/main.py). Ela não entra no contexto do
+  modelo nem no log.
 """
 
 import json
 import logging
 import re
 import time
+from contextvars import ContextVar
 from typing import Any
 
 import httpx
@@ -28,6 +32,9 @@ log = logging.getLogger("antecipe.ai.ferramentas")
 _UUID = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 _CODIGO = re.compile(r"^[A-Z_]{3,60}$")
 POR_PAGINA = 10
+
+# sessão (cookie antecipe_sessao) de quem fez a pergunta; o nginx a repassa em X-Antecipe-Sessao
+SESSAO_DO_USUARIO: ContextVar[str] = ContextVar("sessao_do_usuario", default="")
 
 _STATUS_LOTE = {
     "na_fila": "Na fila: o lote ainda não começou a ser processado.",
@@ -80,11 +87,13 @@ class AntecipeTools(Toolkit):
         """GET na API. `rota` é o padrão sem valores (vai para o log); `caminho` é o endereço real."""
         inicio = time.perf_counter()
         status = 0
+        sessao = SESSAO_DO_USUARIO.get()
+        headers = {"Authorization": f"Bearer {sessao}"} if sessao else None
         try:
             async with httpx.AsyncClient(
                 base_url=self.api_url, timeout=self._timeout_s, transport=self._transport
             ) as c:
-                r = await c.get(caminho, params=params)
+                r = await c.get(caminho, params=params, headers=headers)
             status = r.status_code
         except httpx.HTTPError as e:
             raise ErroConsulta("A API do Antecipe não respondeu agora. Tente de novo em instantes.") from e

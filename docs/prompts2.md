@@ -279,3 +279,28 @@ O prompt termina com: "O agente ficou alinhado?"
 4. **Achado:** perguntado sobre a coluna `DATA_AQUISICAO`, o agente inventou que era "a data em que a empresa adquiriu o título". No motor (`motor.go:183`), é a data em que o fundo adquire a nota e vira a data-base dela. A ferramenta não trazia essa explicação. A IA a incluiu em `consultar_formato_do_arquivo` com o texto do contrato v1.4, criou um teste (21 passam, ruff limpo) e publicou `antecipe-ai:v3`.
 
 **O que o time fez com a resposta:** _(preencher)_
+
+---
+
+## #10 · 24/10/2026 ~17:47–18:15 · README para rodar local e ajustes finais
+
+**Prompt (time → Claude Code):**
+
+> vamos dar git pull já esta tudo pronto
+>
+> vamos deixar o readme completo para se o pessoal rodar somente no local com makeup, temos que verificar todas as env necessárias para o funcionamento local e a pessoa as vezes colocar em um .env global
+>
+> (…) não vamos fazer deploy nem deixar em prod (…) podemos apagar todas as docs de railway e relacionado com deploy (…) a gente vai enviar as .env pelo formulario que é secreto e a ideia é o pessoal colocar as env, rodar o make up isso já criar um usuario de login e gestor teste (…)
+
+**Mensagens que o time mandou depois, em ordem:** "subiu o ultimo push verifique oq foi subido"; "api ta demorando"; "A API não respondeu. Veja: make logs"; (print do nginx: `400 Request Header Or Cookie Too Large`); (o chat respondendo "Não encontrei o lote" para a nota 725714 e para um pedido de gráfico); "tire esse switch qd loga como gestor, gestor tem acesso apenas as configuraacoes e sabemos pelo login".
+
+**O que a IA fez:**
+
+1. **README local:** passo a passo (`.env` do formulário na raiz → `make up` → logins), tabela das variáveis do `.env` único, comandos e solução de problemas. O `make up` passou a criar a conta de empresa de teste (`EMPRESA_EMAIL`/`EMPRESA_SENHA`, completadas se faltarem) e a mostrar os dois logins. Saíram `docs/deploy-railway.md`, `frontend/vercel.json` e `make publicar`. Validado num clone limpo: `make up` sem erro, front 200, logins de empresa e gestor entrando.
+2. **Último push do time:** tirava do `frontend/Dockerfile` o espelho do npm. A IA o devolveu, porque na rede do evento o build do front quebraria.
+3. **API demorando:** causada pela própria IA. O clone de teste tem o mesmo nome de projeto Docker e recriou o volume do Postgres com outra senha (`password authentication failed`). A IA recriou o banco local (só tinha dados do teste), apagou o clone e pôs no README o `make limpar` para quem trocar a `POSTGRES_PASSWORD`.
+4. **400 Cookie Too Large:** cookies de `localhost` valem para todas as portas e somavam mais que os 8 KB padrão do nginx. O nginx passou a aceitar 64 KB e não repassa mais cookies ao assistente. Testado com um cookie de 20 KB em `/`, `/api` e `/ai`.
+5. **"Não encontrei o lote" no chat:** com as contas v1.5, a API só mostra um lote de conta à dona e aos gestores, e as ferramentas consultavam sem sessão (404). Agora o nginx repassa só o cookie `antecipe_sessao` em `X-Antecipe-Sessao`, um middleware do assistente o guarda durante a requisição (fora do contexto do modelo e do log) e as ferramentas consultam com `Authorization: Bearer`. Com teste (22 passam) e de ponta a ponta: lote da empresa 404 anônimo, 200 com sessão, e o agente explicou a nota 900019.
+6. **Seletor Usuário/Gestor:** fora do modo demonstração, o seletor some, porque o perfil vem do login.
+
+**O que o time fez com a resposta:** _(preencher)_

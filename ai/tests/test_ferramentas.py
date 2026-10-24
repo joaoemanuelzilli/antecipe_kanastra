@@ -6,7 +6,7 @@ import pytest
 from agno.run import RunContext
 
 from app import logs
-from tools.antecipe import AntecipeTools
+from tools.antecipe import SESSAO_DO_USUARIO, AntecipeTools
 
 LOTE = "8f1c2a9e-0d4b-4c51-9a77-2f3e6b1d0c42"
 OUTRO = "0a0b0c0d-1111-2222-3333-444455556666"
@@ -233,6 +233,18 @@ async def test_consultar_regras_usa_titulos_do_catalogo():
         {"codigo": "PRAZO_MAXIMO", "regra": "Prazo máximo", "ativa": True, "parametros": {"prazo_maximo_dias": 120}}
     ]
     assert out["publicada_em"] == "24/10/2026 15:10"
+
+
+async def test_consulta_vai_com_a_sessao_de_quem_pergunta():
+    api = FakeAPI({f"/api/lotes/{LOTE}": (200, LOTE_CONCLUIDO)})
+    marca = SESSAO_DO_USUARIO.set("token-da-empresa")
+    try:
+        await ferramentas(api).consultar_lote(contexto())
+    finally:
+        SESSAO_DO_USUARIO.reset(marca)
+    assert api.pedidos[0].headers["authorization"] == "Bearer token-da-empresa"
+    await ferramentas(api).consultar_lote(contexto())  # sem sessão: anônimo, sem header
+    assert "authorization" not in api.pedidos[1].headers
 
 
 async def test_formato_explica_a_data_de_aquisicao():

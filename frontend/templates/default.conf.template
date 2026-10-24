@@ -11,6 +11,10 @@ server {
     # Lotes de até 500 mil linhas (~100 MB)
     client_max_body_size 300m;
 
+    # Cookies de localhost valem para todas as portas: os de outros projetos locais se somam ao da
+    # sessão e passam do padrão de 8 KB ("400 Request Header Or Cookie Too Large").
+    large_client_header_buffers 4 64k;
+
     location /api/ {
         set $api http://${API_UPSTREAM};
         proxy_pass $api;
@@ -35,6 +39,9 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Request-Id $request_id;
         proxy_set_header Authorization "Bearer ${AI_SECURITY_KEY}";
+        proxy_set_header Cookie "";
+        # só a sessão do Antecipe, para o assistente consultar a API como quem pergunta
+        proxy_set_header X-Antecipe-Sessao $cookie_antecipe_sessao;
     }
 
     # POST da pergunta; sem buffer para o streaming (SSE)
@@ -46,6 +53,9 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Request-Id $request_id;
         proxy_set_header Authorization "Bearer ${AI_SECURITY_KEY}";
+        proxy_set_header Cookie "";
+        # só a sessão do Antecipe, para o assistente consultar a API como quem pergunta
+        proxy_set_header X-Antecipe-Sessao $cookie_antecipe_sessao;
         proxy_buffering off;
         proxy_cache off;
         proxy_read_timeout 300s;

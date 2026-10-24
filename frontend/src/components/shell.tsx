@@ -6,7 +6,6 @@ import { Moon, Sun, Settings2, UserRound, House, Files } from 'lucide-react';
 import { useDemoProfile } from '@/lib/demo-profile';
 import { usePathname } from '@/lib/router';
 import { cx } from '@/lib/format';
-import { useAccount } from '@/api/auth';
 import { MOCK_MODE, setGestorSenha } from '@/api/client';
 import './compact-rail.css';
 import { useTheme } from '@/lib/theme';
@@ -17,7 +16,6 @@ export function Brand() {
   return <Link className="rail-brand" href="/dashboard" aria-label="Antecipe, início"><img src="/figma/logo-mark.svg" width="41" height="32" alt="" /></Link>;
 }
 export function RoleSwitch() {
-  const account = useAccount();
   const manager = usePathname() === '/gestor';
   const navigate = useNavigate();
   const [pending, setPending] = useState<'user' | 'manager' | null>(null);
@@ -25,7 +23,8 @@ export function RoleSwitch() {
     if (pending || (role === 'manager') === manager) return;
     setPending(role);
   }
-  if (!MOCK_MODE && account.data?.perfil !== 'gestor') return null;
+  // Conectado ao Go, o perfil vem do login (gestor só vê as regras): o seletor fica só na demonstração.
+  if (!MOCK_MODE) return null;
   return <><nav className="role-switch" aria-label="Perfil de acesso"><Link href="/dashboard" onClick={event => { event.preventDefault(); switchRole('user'); }} className={cx(!manager && 'selected')} aria-current={!manager ? 'page' : undefined}>Usuário</Link><Link href="/gestor" onClick={event => { event.preventDefault(); switchRole('manager'); }} className={cx(manager && 'selected')} aria-current={manager ? 'page' : undefined}>Gestor</Link></nav>{pending ? <RoleTransition role={pending} onComplete={() => { if (pending === 'manager' && MOCK_MODE) setGestorSenha('demo-gestor'); navigate(pending === 'manager' ? '/gestor' : '/dashboard'); setPending(null); }} /> : null}</>;
 }
 

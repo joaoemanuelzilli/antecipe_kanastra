@@ -16,6 +16,7 @@ from agents.assistente import ASSISTENTE_ID, criar_assistente
 from app import logs
 from app.settings import carregar
 from db.session import sessoes
+from tools.antecipe import SESSAO_DO_USUARIO
 
 cfg = carregar()
 logs.configurar(cfg.log_level)
@@ -39,7 +40,30 @@ agent_os = AgentOS(
     cors_allowed_origins=cfg.cors_origens,
     telemetry=False,
 )
+
+
+class SessaoDoUsuario:
+    """Middleware ASGI: guarda, só durante a requisição, a sessão de quem pergunta (header
+    X-Antecipe-Sessao, posto pelo nginx a partir do cookie). As ferramentas consultam a API com ela,
+    para ver os lotes da conta. Não vai para o modelo nem para o log."""
+
+    def __init__(self, app):  # type: ignore[no-untyped-def]
+        self.app = app
+
+    async def __call__(self, scope, receive, send):  # type: ignore[no-untyped-def]
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        valor = dict(scope.get("headers") or []).get(b"x-antecipe-sessao", b"").decode("latin-1").strip()
+        marca = SESSAO_DO_USUARIO.set(valor)
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            SESSAO_DO_USUARIO.reset(marca)
+
+
 app = agent_os.get_app()
+app.add_middleware(SessaoDoUsuario)
 app.add_middleware(logs.LogDeAcesso)
 
 if not cfg.chave_configurada:
