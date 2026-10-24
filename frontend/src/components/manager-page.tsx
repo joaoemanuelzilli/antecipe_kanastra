@@ -3,7 +3,6 @@ import { ArrowRight, CheckCircle2, Code2, Download, Eye, History, ListChecks, Lo
 import { ApiError, MOCK_MODE, clearGestorSenha, getGestorSenha, setGestorSenha, getRegras, getVersao, getVersoes, previaRegras, publicarRegras, verificarGestor } from '@/api/client';
 import type { DetalheVersao, ParametroCatalogo, Previa, Regras, RegrasPublicadas, VersaoRegras } from '@/api/types';
 import { useRouter } from '@/lib/router';
-import { RoleTransition } from './role-transition';
 import './manager-page.css';
 import { dateBR, moneyCentavos } from '@/lib/format';
 import { validateDraft, withRuleParameter } from '@/lib/rule-draft';
@@ -33,10 +32,10 @@ export function ManagerPage() {
   useEffect(() => {
     if (!MOCK_MODE) return;
     setGestorSenha('demo-gestor');
-    const timer = window.setTimeout(() => setEntering(false), 1900);
+    const timer = window.setTimeout(() => setEntering(false), 0);
     return () => window.clearTimeout(timer);
   }, []);
-  if (entering) return <RoleTransition role="manager" />;
+  if (entering) return null;
   return <ManagerContent />;
 }
 

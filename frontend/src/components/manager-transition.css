@@ -1,15 +1,13 @@
-.manager-transition{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;overflow:hidden}
-.manager-transition-fill{position:absolute;inset:0;background:#00ce64;animation:manager-fill 650ms cubic-bezier(.65,0,.25,1) both}
-.manager-transition-copy{position:relative;text-align:center;color:#003f35;padding:24px;animation:manager-copy 1900ms ease both}
-.manager-transition-icon{display:grid;place-items:center;margin:0 auto 24px;width:80px;height:80px;border-radius:28px;background:rgba(255,255,255,.35)}
-.manager-transition-copy h2{font-size:30px;font-weight:600;margin:0 0 12px;letter-spacing:-.7px}
-.manager-transition-copy p{font-size:15px;margin:0}
-.manager-transition-progress{display:block;width:180px;height:4px;border-radius:8px;background:rgba(0,63,53,.15);margin:32px auto 0;overflow:hidden}
-.manager-transition-progress span{display:block;height:100%;background:#003f35;border-radius:inherit;transform-origin:left;animation:manager-progress 1300ms 400ms ease both}
-@keyframes manager-fill{from{clip-path:circle(0 at 100% 0)}to{clip-path:circle(150% at 100% 0)}}
-@keyframes manager-copy{0%,25%{opacity:0;transform:translateY(12px)}40%,85%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-8px)}}
-@keyframes manager-progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-@media(prefers-reduced-motion:reduce){.manager-transition-fill,.manager-transition-copy,.manager-transition-progress span{animation:none}}
-:root[data-profile-reduced-motion="true"] .manager-transition-fill,:root[data-profile-reduced-motion="true"] .manager-transition-copy,:root[data-profile-reduced-motion="true"] .manager-transition-progress span{animation:none}
-
-.role-transition-bot{display:block;width:291px;height:163px;max-width:100%;object-fit:contain;margin:0 auto 24px}.manager-transition-copy{width:min(100%,440px)}
+.role-transition-overlay{position:fixed;inset:0;z-index:1000;background:#f5f7f5;animation:role-cover 180ms ease-out both}
+.manager-transition{position:fixed;inset:0;z-index:1001;display:grid;place-items:center;overflow:hidden;outline:none}
+.manager-transition-copy{position:relative;text-align:center;color:#203e2e;padding:24px;width:min(100%,440px);animation:role-content 260ms ease-out both}
+.manager-transition-copy h2{font-size:28px;font-weight:600;margin:0 0 12px;letter-spacing:-.6px;line-height:1.3}
+.manager-transition-copy p{font-size:14px;color:#5d7063;margin:0;line-height:1.7}
+.role-transition-bot{display:block;width:291px;height:163px;max-width:100%;object-fit:contain;margin:0 auto 24px}
+.manager-transition-progress{display:block;width:120px;height:3px;border-radius:8px;background:#dce9e0;margin:28px auto 0;overflow:hidden}
+.manager-transition-progress span{display:block;height:100%;background:#00864c;border-radius:inherit;transform-origin:left;animation:role-progress 1500ms linear both}
+@keyframes role-cover{from{opacity:0}to{opacity:1}}
+@keyframes role-content{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes role-progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media(prefers-reduced-motion:reduce){.role-transition-overlay,.manager-transition-copy,.manager-transition-progress span{animation:none}}
+:root[data-profile-reduced-motion=true] .role-transition-overlay,:root[data-profile-reduced-motion=true] .manager-transition-copy,:root[data-profile-reduced-motion=true] .manager-transition-progress span{animation:none}

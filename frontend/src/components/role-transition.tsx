@@ -1,12 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
 import './manager-transition.css';
 
-export function RoleTransition({ role }: { role: 'user' | 'manager' }) {
-  const [visible, setVisible] = useState(true);
+export function RoleTransition({ role, onComplete }: { role: 'user' | 'manager'; onComplete: () => void }) {
   useEffect(() => {
-    const timer = window.setTimeout(() => setVisible(false), 1900);
+    const timer = window.setTimeout(onComplete, 1500);
     return () => window.clearTimeout(timer);
-  }, []);
-  if (!visible) return null;
-  return <div className="manager-transition" role="status" aria-live="polite" aria-label={role === 'manager' ? 'Entrando como gestor' : 'Entrando como usuário'}><div className="manager-transition-fill" /><div className="manager-transition-copy"><img className="role-transition-bot" src={role === 'manager' ? '/figma/role-manager.png' : '/figma/role-user.png'} width="291" height="163" alt="" /><h2>{role === 'manager' ? 'Entrando como gestor' : 'Entrando como usuário'}</h2><p>Preparando seu ambiente…</p><span className="manager-transition-progress" aria-hidden="true"><span /></span></div></div>;
+  }, [onComplete]);
+  return <Dialog.Root open><Dialog.Portal><Dialog.Overlay className="role-transition-overlay" /><Dialog.Content className="manager-transition" onEscapeKeyDown={event => event.preventDefault()} onPointerDownOutside={event => event.preventDefault()} onInteractOutside={event => event.preventDefault()} onCloseAutoFocus={event => event.preventDefault()}><div className="manager-transition-copy"><img className="role-transition-bot" src={role === 'manager' ? '/figma/role-manager.png' : '/figma/role-user.png'} width="291" height="163" alt="" /><Dialog.Title>{role === 'manager' ? 'Entrando como gestor' : 'Entrando como usuário'}</Dialog.Title><Dialog.Description>Preparando seu ambiente…</Dialog.Description><span className="manager-transition-progress" aria-hidden="true"><span /></span></div></Dialog.Content></Dialog.Portal></Dialog.Root>;
 }

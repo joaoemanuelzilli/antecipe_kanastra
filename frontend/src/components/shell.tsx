@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { RoleTransition } from './role-transition';
 import Link from '@/lib/link';
 import { Settings2, UserRound } from 'lucide-react';
 import { useDemoProfile } from '@/lib/demo-profile';
 import { usePathname } from '@/lib/router';
 import { cx } from '@/lib/format';
-import { MOCK_MODE } from '@/api/client';
+import { MOCK_MODE, setGestorSenha } from '@/api/client';
 import './compact-rail.css';
 import { AssistantChat } from './assistant-chat';
 import { clearDemoAccess } from './demo-login-page';
@@ -16,8 +16,15 @@ export function Brand() {
 }
 export function RoleSwitch() {
   const manager = usePathname() === '/gestor';
-  return <nav className="role-switch" aria-label="Perfil de acesso"><Link href="/dashboard" state={manager ? { roleTransition: 'user' } : undefined} onClick={event => { if (!manager) event.preventDefault(); }} className={cx(!manager && 'selected')} aria-current={!manager ? 'page' : undefined}>Usuário</Link><Link href="/gestor" onClick={event => { if (manager) event.preventDefault(); }} className={cx(manager && 'selected')} aria-current={manager ? 'page' : undefined}>Gestor</Link></nav>;
+  const navigate = useNavigate();
+  const [pending, setPending] = useState<'user' | 'manager' | null>(null);
+  function switchRole(role: 'user' | 'manager') {
+    if (pending || (role === 'manager') === manager) return;
+    setPending(role);
+  }
+  return <><nav className="role-switch" aria-label="Perfil de acesso"><Link href="/dashboard" onClick={event => { event.preventDefault(); switchRole('user'); }} className={cx(!manager && 'selected')} aria-current={!manager ? 'page' : undefined}>Usuário</Link><Link href="/gestor" onClick={event => { event.preventDefault(); switchRole('manager'); }} className={cx(manager && 'selected')} aria-current={manager ? 'page' : undefined}>Gestor</Link></nav>{pending ? <RoleTransition role={pending} onComplete={() => { if (pending === 'manager' && MOCK_MODE) setGestorSenha('demo-gestor'); navigate(pending === 'manager' ? '/gestor' : '/dashboard'); setPending(null); }} /> : null}</>;
 }
+
 function HelpGuide() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -57,10 +64,9 @@ function HelpGuide() {
   return <><button className="mascot-help" onClick={() => { setQuestion(''); setOpen(true); }} aria-label="Abrir chat com a IA"><span className="mascot-help-label">Fale com a IA</span><span className="mascot-help-media" aria-hidden="true"><video ref={videoRef} src="/figma/assistant-head-loop.mp4" poster="/figma/assistant-head-poster.jpg" width="100" height="100" autoPlay muted loop playsInline preload="metadata" tabIndex={-1} /></span></button><AssistantChat key={`${pathname}:${question}:${questionRequest}`} open={open} onOpenChange={setOpen} initialQuestion={question} /></>;
 }
 export function Shell({ children }: { children: React.ReactNode }) {
-  const location = useLocation();
   const pathname = usePathname();
   const { reducedMotion } = useDemoProfile();
   useEffect(() => { document.documentElement.dataset.profileReducedMotion = String(reducedMotion); return () => { delete document.documentElement.dataset.profileReducedMotion; }; }, [reducedMotion]);
   const manager = pathname === '/gestor';
-  return <div className="figma-app"><aside className="app-rail"><div className="rail-inner"><Brand />{manager ? <nav className="rail-nav" aria-label="Navegação do gestor"><Link href="/gestor" className="rail-link active" aria-label="Configuração do fundo" aria-current="page" title="Configuração do fundo"><Settings2 size={24} strokeWidth={1.5} aria-hidden="true" /></Link></nav> : <><nav className="rail-nav" aria-label="Navegação principal"><Link href="/dashboard" className={cx('rail-link', (pathname === '/dashboard' || pathname === '/enviar') && 'active')} aria-label="Dashboard" aria-current={pathname === '/dashboard' ? 'page' : undefined} title="Dashboard"><img src="/figma/house.svg" width="24" height="24" alt="" /></Link><Link href="/lotes" className={cx('rail-link', (pathname === '/lotes' || pathname.startsWith('/lote/')) && 'active')} aria-label="Meus lotes" aria-current={pathname === '/lotes' ? 'page' : undefined} title="Meus lotes"><img src="/figma/file-text.svg" width="24" height="24" alt="" /></Link></nav><Link href="/perfil" className={cx('rail-link', pathname === '/perfil' && 'active')} aria-label="Meu perfil" aria-current={pathname === '/perfil' ? 'page' : undefined} title="Meu perfil"><UserRound size={24} strokeWidth={1.5} aria-hidden="true" /></Link></>}</div></aside><div className="app-workspace">{children}<footer className="app-environment">{MOCK_MODE ? <>Demonstração · Dados fictícios <Link href="/login" onClick={clearDemoAccess}>Sair da demonstração</Link></> : 'Antecipe · Antecipação com clareza'}</footer></div><HelpGuide />{location.pathname === '/dashboard' && location.state?.roleTransition === 'user' ? <RoleTransition key={location.key} role="user" /> : null}</div>;
+  return <div className="figma-app"><aside className="app-rail"><div className="rail-inner"><Brand />{manager ? <nav className="rail-nav" aria-label="Navegação do gestor"><Link href="/gestor" className="rail-link active" aria-label="Configuração do fundo" aria-current="page" title="Configuração do fundo"><Settings2 size={24} strokeWidth={1.5} aria-hidden="true" /></Link></nav> : <><nav className="rail-nav" aria-label="Navegação principal"><Link href="/dashboard" className={cx('rail-link', (pathname === '/dashboard' || pathname === '/enviar') && 'active')} aria-label="Dashboard" aria-current={pathname === '/dashboard' ? 'page' : undefined} title="Dashboard"><img src="/figma/house.svg" width="24" height="24" alt="" /></Link><Link href="/lotes" className={cx('rail-link', (pathname === '/lotes' || pathname.startsWith('/lote/')) && 'active')} aria-label="Meus lotes" aria-current={pathname === '/lotes' ? 'page' : undefined} title="Meus lotes"><img src="/figma/file-text.svg" width="24" height="24" alt="" /></Link></nav><Link href="/perfil" className={cx('rail-link', pathname === '/perfil' && 'active')} aria-label="Meu perfil" aria-current={pathname === '/perfil' ? 'page' : undefined} title="Meu perfil"><UserRound size={24} strokeWidth={1.5} aria-hidden="true" /></Link></>}</div></aside><div className="app-workspace">{children}<footer className="app-environment">{MOCK_MODE ? <>Demonstração · Dados fictícios <Link href="/login" onClick={clearDemoAccess}>Sair da demonstração</Link></> : 'Antecipe · Antecipação com clareza'}</footer></div><HelpGuide /></div>;
 }
