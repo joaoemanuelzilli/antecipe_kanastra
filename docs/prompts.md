@@ -409,3 +409,32 @@ Grade única: máximo1280px e margens responsivas64/40/20, compartilhados por Da
 Cabeçalho padrão: título/descrição e seletor da Dashboard compartilhados por todas as páginas do portal, inclusive estados de carregamento/erro. Ações e contexto ficam abaixo; padding superior64/48/36px. Conferidos desktop/celular, acesso/editor do gestor e modal de envio; lint/build aprovados. Registro em frontend/docs/prompts-frontend.md.
 
 Meus lotes: cards e Novo envio compartilhados com a Dashboard; busca, situação, data-base e ordenação com inputs do login Figma.53testes, lint/build e fluxos desktop/celular conferidos. Detalhes em frontend/docs/prompts-frontend.md.
+
+---
+
+## #15 · 24/10/2026 · Pull do front e teste local
+
+**Prompt (time → Claude Code):**
+
+> de git pull q mergeamos o front end
+>
+> vamos testar local, rode aqui
+
+**O que a IA fez:**
+
+1. **Pull do front** (PR #1 do Mateus: React + Vite, Figma, MSW só com `VITE_MOCK_API=true`). Resolveu o conflito no `docs/prompts.md` mantendo as duas entradas.
+2. **Conferiu o front contra o contrato:**
+   - o cliente chama exatamente as rotas do `docs/api.md`;
+   - os mocks ficam desligados no build de produção;
+   - o Dockerfile (Node → nginx) usa o nosso template;
+   - os 96 campos do `types.ts` existem nas respostas reais da API.
+3. **O `make up` falhou no `npm ci`:** o firewall Fortinet da rede do evento intercepta o HTTPS de `registry.npmjs.org`, que chega com certificado da FortiGate. Os outros registries (yarnpkg, PyPI, Docker Hub, Go) passam normalmente. O `frontend/Dockerfile` passou a tentar o npm oficial e, se falhar, usar o espelho `registry.yarnpkg.com`; o npm troca o host do lock sozinho.
+4. **Teste local pelo nginx (`:3000`):**
+   - página e arquivos JS/CSS, e as rotas internas da SPA;
+   - config e envio do exemplo concluído, com as 5 etapas;
+   - notas, CSV e `resultado.json`;
+   - cessão com 12 cedidas e 1 excluída por duplicidade;
+   - gestor (204) e assistente (200), com `/ai/sessions` em 404.
+
+**O que o time fez com a resposta:** _(preencher)_
+

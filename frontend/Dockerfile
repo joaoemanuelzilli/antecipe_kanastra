@@ -1,7 +1,10 @@
 FROM node:24-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# Tenta o registry oficial; se a rede interceptar o HTTPS dele (ex.: firewall de evento),
+# usa o espelho registry.yarnpkg.com (mesmos pacotes; o npm troca o host do lock sozinho).
+RUN npm ci --fetch-retries=1 --fetch-retry-mintimeout=2000 --fetch-retry-maxtimeout=5000 \
+ || npm ci --registry=https://registry.yarnpkg.com/
 COPY . .
 RUN npm run build
 
