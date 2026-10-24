@@ -14,6 +14,21 @@ _Notebook com 16 núcleos, Postgres 18. Medido com `make carga`._
 
 ---
 
+## Testar somente a interface com dados fictícios
+
+A contribuição do frontend está em publicação na branch `codex/frontend-contract-v1.1` do fork [`matteuszu/antecipe_kanastra`](https://github.com/matteuszu/antecipe_kanastra), para PR a este repositório. A partir de um clone que contenha essa branch, use Node.js >=22.12.0:
+
+```bash
+git switch codex/frontend-contract-v1.1
+cd frontend
+npm ci
+npm run demo
+```
+
+Abra `http://localhost:5173` (ou a porta informada pelo Vite). O arquivo `.env.demo` é versionado: não precisa criar `.env.local`, fornecer segredos ou iniciar Go, Supabase, Docker ou Vercel. Entre com dados fictícios ou use **Explorar demonstração**; a senha pública do gestor mock é `demo-gestor`. Valores, etapas e cessões são simulados, sem movimentação financeira. O mascote desta interface oferece um guia local, sem chamadas de IA.
+
+Para conectar ao backend já implementado, use `npm run dev` com a API disponível; para a stack completa, siga os passos abaixo. O build normal conecta ao Go; `npm run build:demo` prepara a demonstração isolada. Detalhes e limites dos mocks estão no [README do frontend](frontend/README.md). Os testes de UI desta contribuição não substituem nem constituem execução dos testes de Go descritos neste documento.
+
 ## Como rodar
 
 **Pré-requisitos:** Docker 24+ com Docker Compose v2 e `make`. Não precisa de Go nem de Node.

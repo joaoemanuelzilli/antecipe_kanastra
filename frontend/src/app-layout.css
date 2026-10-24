@@ -1,0 +1,53 @@
+/* Grade horizontal compartilhada por todas as páginas do portal. */
+html { scrollbar-gutter: stable; }
+
+@supports (scrollbar-gutter: stable) {
+  /* O gutter já reserva a barra; o modal não precisa compensá-la novamente. */
+  html body[data-scroll-locked] { margin-right: 0 !important; }
+}
+
+:root {
+  --app-content-max-width: 1280px;
+  --app-content-gutter: 64px;
+  --app-page-padding: 64px;
+}
+
+.container,
+.app-environment {
+  width: calc(100% - 2 * var(--app-content-gutter));
+  max-width: var(--app-content-max-width);
+  min-width: 0;
+  margin-inline: auto;
+}
+
+.app-workspace > .page-content,
+.app-workspace > .dashboard-page {
+  padding-block: var(--app-page-padding);
+}
+
+.result-page > .container {
+  padding-top: var(--app-page-padding);
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.page-actions .breadcrumb {
+  flex-wrap: wrap;
+  min-width: 0;
+  margin-right: auto;
+}
+
+@media (max-width: 1100px) {
+  :root { --app-content-gutter: 40px; --app-page-padding: 48px; }
+}
+
+@media (max-width: 700px) {
+  :root { --app-content-gutter: 20px; --app-page-padding: 36px; }
+}

@@ -1,0 +1,5 @@
+const base=(process.argv[2]||'http://localhost:8080').replace(/\/$/,'');
+const routes=[['/api/saude',body=>body.status==='ok'],['/api/config',body=>typeof body.data_base_padrao==='string'&&Number.isInteger(body.regras_versao)&&typeof body.precificacao?.descricao==='string'&&Array.isArray(body.upload?.colunas)&&Number.isInteger(body.upload.tamanho_maximo_bytes)],['/api/regras',body=>Number.isInteger(body.versao)&&Array.isArray(body.catalogo)&&Array.isArray(body.regras?.validadores)&&typeof body.precificacao_efetiva?.metodo==='string'],['/api/regras/versoes',body=>Array.isArray(body.versoes)]];
+let failed=false;
+for(const [route,validate] of routes){try{const response=await fetch(base+route,{signal:AbortSignal.timeout(5000)});const body=await response.json();const ok=response.ok&&validate(body);console.log(`${ok?'OK':'FALHA'} ${route} HTTP ${response.status}`);if(!ok)failed=true;}catch{console.log(`FALHA ${route}: API indisponível ou resposta inválida.`);failed=true;}}
+if(failed)process.exitCode=1;
