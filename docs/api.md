@@ -39,6 +39,10 @@ Contrato entre o backend (Go) e o front (React). **Qualquer mudança é combinad
 
 ---
 
+## `GET /metrics`
+
+Métricas do OpenTelemetry no formato Prometheus (lotes, notas avaliadas, duração por etapa, notas cedidas). Não faz parte da tela.
+
 ## `GET /api/saude`
 
 `200 {"status": "ok"}`, ou `503` se o banco estiver fora.
@@ -94,7 +98,7 @@ Use `XMLHttpRequest` com `xhr.upload.onprogress` para mostrar o progresso do **e
   ```json
   { "lote_id": "8f1c2a9e-0d4b-4c51-9a77-2f3e6b1d0c42", "status": "concluido", "replay": true }
   ```
-- `400 ARQUIVO_AUSENTE` · `413 ARQUIVO_GRANDE_DEMAIS` · `415 ARQUIVO_NAO_CSV` · `422 CABECALHO_INVALIDO` ou `ARQUIVO_VAZIO`
+- `400 ARQUIVO_AUSENTE` · `400 DATA_BASE_INVALIDA` · `400 UPLOAD_INVALIDO` · `409 IDEMPOTENCY_KEY_REUTILIZADA` (mesma chave com outro arquivo ou outra data-base) · `413 ARQUIVO_GRANDE_DEMAIS` · `415 ARQUIVO_NAO_CSV` · `422 CABECALHO_INVALIDO` ou `ARQUIVO_VAZIO` (sem nenhuma nota)
 
 Erros **dentro** das linhas (data inválida, valor ilegível) **não** derrubam o lote: a linha sai como recusada com o código `FORMATO_INVALIDO`.
 
@@ -293,7 +297,7 @@ Sem corpo.
   ```
   `notas_excluidas`: aprovadas na simulação que não puderam ser vendidas na confirmação (vendidas em paralelo por outra operação, ou a concentração mudou). Normalmente vem vazio. Se vier com itens, avise: "N notas saíram da cessão desde a simulação."
 - `200 OK` com o mesmo corpo e o header `Idempotent-Replay: true`: confirmação repetida, nada foi vendido de novo.
-- `409 LOTE_NAO_CONCLUIDO` · `409 SEM_APROVADAS` · `404 LOTE_NAO_ENCONTRADO`
+- `409 LOTE_NAO_CONCLUIDO` · `409 SEM_APROVADAS` · `409 IDEMPOTENCY_KEY_REUTILIZADA` (chave já usada em outro lote) · `404 LOTE_NAO_ENCONTRADO`
 
 Texto de erro genérico sugerido: "Não conseguimos confirmar. Nada foi cedido. Tente de novo."
 
@@ -303,7 +307,7 @@ Texto de erro genérico sugerido: "Não conseguimos confirmar. Nada foi cedido. 
 
 Mesmo motor, **sem gravar nada**. Até **10.000 notas**. Acima disso, `413` com a mensagem para usar `POST /api/lotes`.
 
-Aceita JSON **ou** o próprio CSV (`Content-Type: text/csv`). Os valores vêm no formato do CSV.
+Aceita JSON **ou** o próprio CSV (`Content-Type: text/csv`, com `?data_base=AAAA-MM-DD` opcional). Os valores vêm no formato do CSV. Corpo inválido → `400 JSON_INVALIDO`.
 
 ```json
 {
@@ -410,7 +414,7 @@ Com o header `X-Gestor-Senha`: `204` se a senha estiver certa, `401 SENHA_INVALI
 
 - `regras` vem **exatamente** no formato do `validadores_antecipe.json` (que diz `DESCONTO_SIMPLES`).
 - `precificacao_efetiva` é o que **vale de fato**: o YAML tem precedência sobre as regras. Na tela do gestor, mostre o método como **somente leitura** ("Juros compostos, definido em config/antecipe.yaml"). Taxa e base continuam editáveis pelas regras, a menos que estejam em `sobrescritos_pelo_yaml`; nesse caso, também ficam somente leitura.
-- `catalogo` traz as 9 regras. `tipo` é um de: `inteiro` | `decimal` | `lista_texto` | `opcao`. Regras sem parâmetro (`CNPJ_SACADO_VALIDO`, `NAO_VENCIDA`) vêm com `parametros: []` e só o switch Ativa.
+- `catalogo` traz as 9 regras. Parâmetros com `"opcional": true` (ex.: `agrupamento`) podem ficar de fora. `tipo` é um de: `inteiro` | `decimal` | `lista_texto` | `opcao`. Regras sem parâmetro (`CNPJ_SACADO_VALIDO`, `NAO_VENCIDA`) vêm com `parametros: []` e só o switch Ativa.
 
 ### `GET /api/regras/versoes`
 
@@ -441,14 +445,15 @@ Header `X-Gestor-Senha`. Corpo: `{"regras": { … JSON completo proposto … }, 
 ```
 
 Texto sugerido: "Aprovadas 412.345 → 371.002 · Líquido −R$ 96.197.532,00".
-`409 SEM_LOTE`: "Envie um lote para ver o impacto." · `400 REGRAS_INVALIDAS` (mesmo formato do PUT).
+`409 SEM_LOTE`: "Envie um lote para ver o impacto." · `422 REGRAS_INVALIDAS` (mesmo formato do PUT).
 
 ### `PUT /api/regras`: publicar nova versão
 
 Header `X-Gestor-Senha`. Corpo: `{"regras": { … }, "autor": "Rafael"}`
 
-- `201 {"versao": 2, "publicada_em": "…"}`. Os próximos lotes já usam a nova versão, sem deploy.
-- `400 REGRAS_INVALIDAS`:
+- `201 {"versao": 2, "publicada_em": "…", "resumo": ["PRAZO_MAXIMO: 180 → 120 dias"]}`. Os próximos lotes já usam a nova versão, sem deploy.
+- `422 SEM_MUDANCAS`: nada mudou em relação à versão publicada.
+- `422 REGRAS_INVALIDAS`:
   ```json
   { "erro": { "codigo": "REGRAS_INVALIDAS", "mensagem": "Algumas regras têm valores inválidos.",
       "detalhes": [ { "campo": "validadores[5].parametros.prazo_maximo_dias", "problema": "deve ser um número inteiro maior que zero" } ] } }
@@ -468,9 +473,9 @@ Header `X-Gestor-Senha`. Corpo: `{"regras": { … }, "autor": "Rafael"}`
 | `NAO_VENCIDA` | Nota vencida | `vencimento`, `data_base` |
 | `PRAZO_MAXIMO` | Prazo acima do limite | `dias`, `maximo`, `antecipavel_em` |
 | `PRAZO_MINIMO` | Prazo abaixo do mínimo | `dias`, `minimo` |
-| `CONCENTRACAO_MAXIMA_SACADO` | Limite por cliente atingido | `percentual_resultante`, `limite`, `grupo` |
-| `CONCENTRACAO_MAXIMA_CEDENTE` | Limite por empresa atingido | `percentual_resultante`, `limite`, `grupo` |
-| `DUPLICIDADE` | Nota já vendida | `vendida_em`, `valor_original_centavos` |
+| `CONCENTRACAO_MAXIMA_SACADO` | Limite por cliente atingido | `percentual_resultante`, `limite`, `grupo`, `grupo_nome` |
+| `CONCENTRACAO_MAXIMA_CEDENTE` | Limite por empresa atingido | `percentual_resultante`, `limite`, `grupo`, `grupo_nome` |
+| `DUPLICIDADE` | Nota já vendida | `vendida_em`, `valor_original_centavos`, `valor_centavos`, `numero`, `vencimento` |
 | `DUPLICADA_NO_ARQUIVO` | Nota repetida no arquivo | `linha_original` |
 | `FORMATO_INVALIDO` | Linha com erro | `campo`, `valor`, `problema` |
 
@@ -481,4 +486,5 @@ Sugestão de UI: ícone + texto em todo status (nunca só cor), filtro por motiv
 ## Histórico do contrato
 
 - **v1 · 24/10/2026 11:00:** versão inicial.
+- **v1.2 · 24/10/2026 12:15:** alinhado ao backend implementado. Erros de regras viram `422` (`REGRAS_INVALIDAS`, `SEM_MUDANCAS`). Entram `409 IDEMPOTENCY_KEY_REUTILIZADA` no upload e na cessão, `400 DATA_BASE_INVALIDA`/`UPLOAD_INVALIDO`, `?data_base` no `/validar` com CSV, `resumo` na resposta do PUT, `opcional` no catálogo, `grupo_nome` na concentração, campos extras em `DUPLICIDADE` e a rota `/metrics`.
 - **v1.1 · 24/10/2026 11:10:** preço padrão passa a ser **juros compostos** (`DESCONTO_COMPOSTO`), trocável em `config/antecipe.yaml`. Entram `precificacao` em `/config`, `/lotes/{id}` e `/validar`, `calculo.metodo` nas notas e `precificacao_efetiva` em `/regras`. Valores dos exemplos recalculados (R$ 10.000 a 30 dias → R$ 9.803,92).

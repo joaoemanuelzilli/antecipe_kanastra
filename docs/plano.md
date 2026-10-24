@@ -109,43 +109,43 @@ Dependências Go previstas: `pgx/v5`, `go.yaml.in/yaml/v3` e `shopspring/decimal
 
 ---
 
-## 6. Arquitetura (filosofia Unix)
+## 6. Arquitetura (hexagonal + filosofia Unix)
 
-Cada pacote faz uma coisa só. O motor é puro, sem banco, rede nem relógio, e o I/O fica nas bordas. Dados vão para stdout e logs para stderr.
+**Decisão do time (24/10, 11:42): arquitetura hexagonal com pastas em inglês.** `handler` para dependências externas, `service` para regras de negócio, `repository` para o banco, testes ponta a ponta, erros pelo `apperrors` e observabilidade com OpenTelemetry. Os nomes de tipos e funções ficam em português, porque são a linguagem do negócio (nota, cedente, sacado).
+
+Cada pacote faz uma coisa só. O domínio e os serviços não importam adaptadores, e os adaptadores implementam as portas definidas em `domain`. Dados vão para stdout e logs para stderr.
 
 ```
 backend/
-  cmd/
-    api/          servidor HTTP: só liga as peças
-    antecipe/     CLI: `validar` (CSV stdin → CSV stdout), `gerar` (lote de teste), `importar-estoque`
+  cmd/api/                 servidor HTTP (só liga as peças)
+  cmd/antecipe/            CLI: gerar · exemplo · validar (CSV stdin → CSV stdout)
   internal/
-    csvnota/      lê o CSV pt-BR em fluxo → Nota (ou erro de linha e campo)
-    documento/    normaliza e valida CNPJ (inclusive alfanumérico), raiz de 8 caracteres
-    regras/       carrega e valida o JSON, registro código → validador, catálogo para a tela
-    validadores/  um arquivo por regra, todos funções puras
-    duplicidade/  chave única, conjunto do estoque, repetidas no próprio arquivo
-    concentracao/ passada determinística sobre o estoque do fundo + lote
-    config/       lê e relê config/antecipe.yaml (precedência sobre as regras publicadas)
-    precificacao/ registro de métodos: DESCONTO_COMPOSTO (padrão) e DESCONTO_SIMPLES, em centavos
-    motor/        orquestra: notas → regras → duplicidade → concentração → preço → resultado
-    textos/       título, mensagem e ação de cada recusa (pt-BR)
-    lotes/        fila de jobs, etapas e progresso
-    cessao/       confirmação transacional (trava, ON CONFLICT, idempotência)
-    store/        Postgres: estoque, lotes, notas do lote, cessões, regras, situação cadastral
-    httpapi/      handlers, middlewares (request id, log de acesso, recover, CORS)
-    obs/          configuração do slog e política de campos permitidos
-  migrations/     *.sql
-config/
-  antecipe.yaml               método de preço e parâmetros de processamento (montado como volume)
-data/
-  validadores_antecipe.json   semente da versão 1 das regras
-  estoque_antecipe.zip        estoque original (2,4 MB, commitado)
-  situacao_cadastral.csv      fonte simulada (cnpj;situacao)
-  exemplo.csv                 lote de demonstração com uma recusa de cada tipo
-frontend/                     app React (outra pessoa), com Dockerfile → nginx
-docs/  plano.md · api.md · prompts.md · relatorio.md
-docker-compose.yml · Makefile · .env.example · README.md
+    domain/                entidades (Nota, Resultado, Lote, Cessao…) e portas (interfaces dos repositórios)
+      rules/               regras do fundo: JSON, catálogo, validação de schema, resumo de mudanças
+    service/               regras de negócio
+      engine/              motor puro: regras em paralelo → duplicidade → concentração → preço
+      validator/           uma função pura por regra
+      pricing/             juros compostos (padrão) e simples, em centavos
+      message/             texto de cada recusa
+      batch/               caso de uso: lotes assíncronos (fila, etapas, progresso)
+      assignment/          caso de uso: cessão segura contra concorrência
+      rulebook/            caso de uso: versões das regras e prévia
+    handler/               adaptadores de entrada
+      rest/                HTTP (contrato docs/api.md)
+      csvfile/             leitura do CSV pt-BR
+    repository/            adaptadores de saída
+      postgres/            pgx, migrations embutidas, COPY, transação da cessão
+      filesystem/          estoque em zip e situação cadastral (CLI e semente)
+    platform/              apperrors · observability (slog + OpenTelemetry) · config (YAML) · document (CNPJ) · format (pt-BR) · generator
+    bootstrap/             raiz de composição (cmd/api e testes ponta a ponta)
+  test/e2e/                testes ponta a ponta: aplicação inteira + Postgres
+config/antecipe.yaml · data/ · frontend/ · docs/ · docker-compose.yml · Makefile · .env.example · README.md
 ```
+
+**Observabilidade:**
+- traces OTLP para o Jaeger (`http://localhost:16686`), com um span por requisição e um por etapa do lote;
+- métricas em `/metrics` (lotes, notas, duração por etapa, notas cedidas);
+- `trace_id` e `span_id` em cada linha de log.
 
 A CLI mostra a filosofia Unix na prática, com o mesmo motor da API:
 

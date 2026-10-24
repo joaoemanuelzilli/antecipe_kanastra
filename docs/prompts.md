@@ -174,4 +174,22 @@ Cada entrada tem o prompt exato, o que a IA fez e o que o time fez com a respost
 
 Os nomes de tipos e funções ficaram em português, porque são a linguagem do negócio (nota, cedente, sacado). Atualizou o plano.
 
+Depois disso, a IA seguiu o plano até a Tarefa 13 (12:15):
+- **Postgres:** migrations embutidas, semente do estoque e `COPY` dos resultados.
+- **Lotes:** fila, 5 etapas com progresso, spans e métricas.
+- **API REST** no contrato `docs/api.md` (agora v1.2).
+- **Cessão:** transação com trava por fundo e `ON CONFLICT`.
+- **Gestor:** regras versionadas com prévia.
+- **Testes ponta a ponta:** 22, todos verdes, contra Postgres de verdade.
+- **Logs:** teste que garante que nenhum dado do CSV aparece neles.
+- **Medições:** `make carga` com 100 mil linhas em 1,0 s, 250 mil em 2,5 s e 500 mil em 4,9 s.
+- **Documentos:** README, relatório e gitleaks sem achados.
+- **Segurança:** a revisão automática apontou mais 3 problemas, todos corrigidos com teste:
+  - injeção de fórmula no CSV;
+  - `Idempotency-Key` reutilizada com outro arquivo;
+  - chave de cessão reservada.
+- **Pendente:**
+  - validar o `make up` com Docker (o usuário ainda sem permissão no grupo `docker`);
+  - integrar o front do colega.
+
 **O que o time fez com a resposta:** _(preencher)_
