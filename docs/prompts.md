@@ -119,6 +119,6 @@ Cada entrada tem o prompt exato, o que a IA fez e o que o time fez com a respost
 
 > de commit e push e comece
 
-**O que a IA fez:** criou o `.gitignore` (`.env`, `amostras/` e builds fora do git), fez o primeiro commit com o plano, o contrato da API, este registro, os dados de origem e o contexto, deu push para o GitHub, instalou o Go 1.27.3 em `~/.local/go` (sem sudo) e começou o plano de implementação.
+**O que a IA fez:** criou o `.gitignore` (`.env`, `amostras/` e builds fora do git), fez o primeiro commit com o plano, o contrato da API, este registro, os dados de origem e o contexto, deu push para o GitHub, instalou o Go 1.27.3 em `~/.local/go` (sem sudo) e escreveu o plano de implementação do backend em `docs/superpowers/plans/2026-10-24-antecipe-backend.md`: 14 tarefas com arquivos, assinaturas, valores e testes. Os pontos sensíveis (CSV em Windows-1252, cabeçalho fora de ordem, API reiniciada no meio do lote, fronteiras das regras e envios simultâneos) têm testes próprios.
 
 **O que o time fez com a resposta:** _(preencher)_
