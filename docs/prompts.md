@@ -473,3 +473,26 @@ Meus lotes: cards e Novo envio compartilhados com a Dashboard; busca, situação
 
 **O que o time fez com a resposta:** _(preencher)_
 
+---
+
+## #18 · 24/10/2026 · O 100k bate 100% com o gabarito? E num SELECT no banco?
+
+**Prompt (time → Claude Code):**
+
+> vc testos no de 100k contra o gabarito que tem no notion deu 100%? se der o select no banco vai dar exatamente todos? eles farão este teste
+
+**O que a IA fez:**
+
+1. **Testou mais uma hipótese para a divergência da situação** (consulta pela raiz do CNPJ): 0 de 87. Confirmou que os sacados barrados por situação no gabarito e os não-ATIVA do CSV publicado não têm nenhuma interseção. São fontes de dados diferentes.
+2. **Criou a view SQL `resultado_gabarito`** (migration 0003), que devolve `linha, id, status, barrado_por` no formato do gabarito, com o teste ponta a ponta `TestViewResultadoGabarito` (a view bate com o `resultado.json`).
+3. **Criou o `scripts/conferir-gabarito-sql.sh`** e o `make conferir-gabarito LOTE=…`, que carregam o gabarito no Postgres e comparam só com SQL.
+4. **Rodou com banco novo, enviando o arquivo de 100 mil pelo front:**
+   - 100.554 linhas;
+   - 97.460 idênticas (96,9%);
+   - 3.094 diferentes só na situação cadastral;
+   - 0 em outras regras;
+   - aprovadas: 86.713 no banco contra 85.215 no gabarito.
+5. **Respondeu ao time:** não dá 100%. Toda a diferença vem da fonte de situação. Recomendou perguntar aos organizadores qual fonte vale e não derivar a situação a partir do gabarito sem o aval deles.
+
+**O que o time fez com a resposta:** _(preencher)_
+

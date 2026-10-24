@@ -4,7 +4,7 @@ SHELL := /bin/bash
 N ?= 500000
 SEMENTE ?= 42
 
-.PHONY: ajuda up down limpar publicar logs logs-ai test test-ai test-integracao gerar carga check demo-concorrencia
+.PHONY: ajuda up down limpar publicar conferir-gabarito logs logs-ai test test-ai test-integracao gerar carga check demo-concorrencia
 
 ajuda: ## Mostra os comandos
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-20s %s\n", $$1, $$2}'
@@ -91,3 +91,7 @@ publicar: ## Monta e envia as imagens para um registry (ex.: make publicar REGIS
 	@echo "    $(REGISTRO)/antecipe-web:$(TAG)"
 	@echo "    $(REGISTRO)/antecipe-ai:$(TAG)"
 	@echo "  Passo a passo da Railway: docs/deploy-railway.md"
+
+conferir-gabarito: ## Compara por SQL um lote do banco com o gabarito oficial (make conferir-gabarito LOTE=<lote_id>)
+	@test -n "$(LOTE)" || { echo "Informe o lote: make conferir-gabarito LOTE=<lote_id>"; exit 1; }
+	./scripts/conferir-gabarito-sql.sh $(LOTE)

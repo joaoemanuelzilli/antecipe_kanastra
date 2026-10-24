@@ -103,6 +103,19 @@ Com a situação do próprio gabarito, o nosso motor reproduz o resultado espera
 
 > As cessões confirmadas entram na carteira do fundo e mudam a concentração. Para reproduzir o gabarito depois de vender notas (por exemplo, depois do `make demo-concorrencia`), rode `make limpar && make up` para voltar a um banco novo.
 
+**Conferência só com SQL, no banco:** a view `resultado_gabarito` devolve cada nota no formato do gabarito.
+
+```sql
+SELECT linha, id, status, barrado_por FROM resultado_gabarito WHERE lote_id = '<lote_id>' ORDER BY linha;
+```
+
+`make conferir-gabarito LOTE=<lote_id>` carrega o gabarito no Postgres e cruza com a view. Resultado medido com banco novo:
+- 100.554 linhas;
+- 97.460 idênticas;
+- 3.094 diferentes só na situação cadastral;
+- 0 diferenças em outras regras;
+- aprovadas: 86.713 no banco contra 85.215 no gabarito. A diferença vem toda da situação cadastral.
+
 Também dá para conferir pela linha de comando:
 
 ```bash

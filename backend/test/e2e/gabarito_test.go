@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"archive/zip"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -103,5 +104,34 @@ func TestGabaritoPelaAPI(t *testing.T) {
 	t.Logf("pela API: %d iguais ao gabarito, %d diferem só na situação cadastral, %d outras", iguais, situacao, outras)
 	if outras > 0 || iguais < 97000 {
 		t.Fatalf("divergências fora da situação cadastral: %d (iguais %d)", outras, iguais)
+	}
+}
+
+// TestViewResultadoGabarito: um SELECT no banco devolve o mesmo que o resultado.json (formato do gabarito).
+func TestViewResultadoGabarito(t *testing.T) {
+	a := novoApp(t)
+	_, r := a.enviar(t, exemplo(t), "")
+	id := r["lote_id"].(string)
+	a.esperar(t, id)
+	api := a.resultado(t, id)
+	rows, err := a.app.Repo.Pool.Query(context.Background(),
+		`SELECT linha, id, status, barrado_por FROM resultado_gabarito WHERE lote_id = $1 ORDER BY linha`, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	i := 0
+	for rows.Next() {
+		var g itemGabarito
+		if err := rows.Scan(&g.Linha, &g.ID, &g.Status, &g.BarradoPor); err != nil {
+			t.Fatal(err)
+		}
+		if g.Linha != api[i].Linha || g.ID != api[i].ID || g.Status != api[i].Status || !slices.Equal(g.BarradoPor, api[i].BarradoPor) {
+			t.Fatalf("linha %d: view %+v, API %+v", g.Linha, g, api[i])
+		}
+		i++
+	}
+	if i != len(api) || i != 23 {
+		t.Fatalf("view = %d linhas, API = %d", i, len(api))
 	}
 }
