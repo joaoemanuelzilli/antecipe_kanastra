@@ -53,3 +53,6 @@
  .result-page .confirmation-info{gap:12px;min-width:0}.result-page .confirmation-info>svg{width:20px;height:20px;flex-shrink:0}.result-page .confirmation-info strong{font-size:12px;line-height:1.6}.result-page .confirmation-info p{font-size:11px;line-height:1.6;margin-top:3px}
  .result-page .confirmation-inner>.button{min-height:44px;padding:10px 16px;font-size:12px;border-radius:14px;flex-shrink:0}
 }
+
+.result-page .notes-panel{scroll-margin-top:24px}
+@media(max-width:760px){.result-page .notes-panel{scroll-margin-top:0}}
