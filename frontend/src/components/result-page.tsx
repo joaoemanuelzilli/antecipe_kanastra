@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import Link from '@/lib/link';
-import { ArrowDownUp, ArrowRight, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Download, FileSearch, LoaderCircle, Plus, Search, Shield, X } from 'lucide-react';
+import { ArrowDownUp, ArrowRight, Check, CheckCircle2, ChevronDown, ChevronRight, Download, FileSearch, LoaderCircle, Plus, Search, Shield, X } from 'lucide-react';
 import type { FiltrosNotas, Lote, Nota, ResultadoCessao } from '@/api/types';
 import { confirmarCessao, getLote, getNotas, nomeArquivoLote, nomeLote, notasCSVURL } from '@/api/client';
 import { dateBR, moneyCentavos } from '@/lib/format';
@@ -12,6 +12,7 @@ import { Feedback, Loading } from './feedback';
 import { Button } from './ui/button';
 import { StatusBadge } from './ui/badge';
 import { Modal } from './ui/dialog';
+import { Pagination } from './ui/pagination';
 import { notify } from './notifications';
 import { UploadPage } from './upload-page';
 import { NoteDetail } from './note-detail';
@@ -84,7 +85,7 @@ export function ResultPage({ id }: { id: string }) {
       <div className="notes-mobile">{rows.map(item => <article className="note-card" key={item.linha} onClick={event => { event.currentTarget.querySelector('button')?.focus(); setSelected(item); }}><div className="note-card-heading"><strong>Nota {item.numero || `da linha ${item.linha}`}</strong><StatusBadge status={item.status} /></div><p className="note-card-company">{item.sacado.nome || 'Sacado não informado'}</p><p className="note-card-doc">{item.sacado.documento || 'Documento não informado'}</p><div className="note-card-values"><div><span>Valor de face</span><strong>{moneyCentavos(item.face_centavos)}</strong></div><div><span>Você recebe</span><strong>{moneyCentavos(item.liquido_centavos)}</strong></div></div><p className="note-card-discount">Desconto: {moneyCentavos(item.desconto_centavos)}</p><div className="note-card-footer"><span>{item.vencimento ? dateBR(item.vencimento) : '—'} · {item.dias === null ? '—' : `${number(item.dias)} dias`}</span><button className="detail-button" onClick={event => { event.stopPropagation(); event.currentTarget.focus(); setSelected(item); }}>Ver detalhes<ChevronRight size={13} /></button></div></article>)}</div>
       {!rows.length && !notesQuery.error ? <p className="empty-search">Nenhuma nota encontrada. Ajuste os filtros ou a busca.</p> : null}
       </>}
-      <div className="table-footer"><span aria-live="polite">{notesQuery.isFetching ? 'Atualizando notas…' : total ? `Exibindo ${number((page - 1) * PAGE_SIZE + 1)}–${number(Math.min(page * PAGE_SIZE, total))} de ${number(total)} notas` : '0 notas encontradas'}</span><div className="pagination" aria-label="Paginação"><Button variant="outline" disabled={page <= 1 || notesQuery.isFetching} onClick={() => setPage(previous => previous - 1)} aria-label="Página anterior"><ChevronLeft size={16} /></Button><span className="notes-page-label" aria-live="polite">Página <strong>{number(page)}</strong> de {number(totalPages)}</span><Button variant="outline" disabled={page >= totalPages || notesQuery.isFetching} onClick={() => setPage(previous => previous + 1)} aria-label="Próxima página"><ChevronRight size={16} /></Button></div></div>
+      <div className="table-footer"><span aria-live="polite">{notesQuery.isFetching ? 'Atualizando notas…' : total ? `Exibindo ${number((page - 1) * PAGE_SIZE + 1)}–${number(Math.min(page * PAGE_SIZE, total))} de ${number(total)} notas` : '0 notas encontradas'}</span><Pagination page={page} totalPages={totalPages} disabled={notesQuery.isFetching} onPageChange={setPage} /></div>
     </section></> : lot.status === 'concluido' ? <Feedback>O processamento terminou, mas o resumo não está disponível. <button className="text-link" onClick={() => lotQuery.refetch()}>Atualizar resultado</button></Feedback> : null}
   </div>{lot.status === 'concluido' && totals ? <div className="confirmation-bar"><div className="container confirmation-inner"><div className="confirmation-info"><Shield size={26} /><div><strong>Regras versão {lot.regras_versao} · data-base {dateBR(lot.data_base)}</strong><p>{sale ? `Cessão registrada em ${dateBR(sale.confirmada_em)}.` : totals.aprovadas === 0 ? 'Abra os detalhes das recusas, corrija o arquivo e envie um novo lote.' : 'A cessão só acontece após sua confirmação.'}</p></div></div>{sale ? <div className="confirmed-message"><CheckCircle2 size={20} />Cessão confirmada</div> : <Button disabled={totals.aprovadas === 0} onClick={openConfirmation}>{totals.aprovadas === 0 ? 'Nenhuma nota para ceder' : `Confirmar cessão de ${number(totals.aprovadas)} ${totals.aprovadas === 1 ? 'nota' : 'notas'}`} <ArrowRight size={18} /></Button>}</div></div> : null}
     {uploadOpen ? <UploadPage onDismiss={() => setUploadOpen(false)} /> : null}
