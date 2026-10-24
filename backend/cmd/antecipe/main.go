@@ -8,6 +8,7 @@ package main
 import (
 	"bufio"
 	"encoding/csv"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -24,6 +25,7 @@ import (
 	"antecipe/internal/platform/observability"
 	"antecipe/internal/repository/filesystem"
 	"antecipe/internal/service/engine"
+	"antecipe/internal/service/export"
 	"antecipe/internal/service/message"
 	"antecipe/internal/service/pricing"
 )
@@ -114,7 +116,8 @@ func validar(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	arqRegras := fs.String("regras", "data/validadores_antecipe.json", "JSON de regras")
 	arqEstoque := fs.String("estoque", "data/estoque_antecipe.zip", "zip do estoque")
 	arqConfig := fs.String("config", "config/antecipe.yaml", "YAML de configuração")
-	arqSituacao := fs.String("situacao", "data/situacao_cadastral.csv", "CSV de situação cadastral")
+	arqSituacao := fs.String("situacao", "data/cnpj_situacao_mock.csv", "CSV de situação cadastral (DOC;SITUACAO_CADASTRAL)")
+	formatoSaida := fs.String("formato", "csv", "saída: csv (o arquivo com o resultado) ou json (formato do gabarito: linha, id, status, barrado_por)")
 	dataBase := fs.String("data-base", "", "data-base AAAA-MM-DD (padrão: a do YAML)")
 	if fs.Parse(args) != nil {
 		return 1
@@ -160,7 +163,7 @@ func validar(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
-	vendidas, ef := filesystem.ContextoDeEstoque(est, r.Fundo.CNPJ)
+	carteira := filesystem.ContextoDeEstoque(est)
 
 	notas, err := csvfile.Ler(stdin, nil)
 	if err != nil {
@@ -169,9 +172,13 @@ func validar(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	s := engine.Validar(notas, r, engine.Contexto{
 		DataBase: db, Situacao: filesystem.SituacaoCom(sit, cfg.Processamento.SituacaoCadastralPadrao),
-		Vendidas: vendidas, Estoque: ef, Preco: calc,
+		Vendidas: carteira.Vendidas, Estoques: carteira.Estoques, Itens: carteira.Itens, Preco: calc,
 	})
-	if err := escreverResultado(stdout, s); err != nil {
+	escrever := escreverResultado
+	if *formatoSaida == "json" {
+		escrever = escreverGabarito
+	}
+	if err := escrever(stdout, s); err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
@@ -220,5 +227,27 @@ func escreverResultado(w io.Writer, s engine.Saida) error {
 	if err := cw.Error(); err != nil {
 		return err
 	}
+	return bw.Flush()
+}
+
+// escreverGabarito escreve no formato do resultado esperado do desafio:
+// [{"linha":2,"id":"725714","status":"APROVADO"}, {"linha":3,"id":"…","status":"BARRADO","barrado_por":["…"]}]
+func escreverGabarito(w io.Writer, s engine.Saida) error {
+	bw := bufio.NewWriterSize(w, 1<<20)
+	enc := json.NewEncoder(bw)
+	bw.WriteString("[\n")
+	for i, rs := range s.Resultados {
+		item := export.ItemGabarito(rs)
+		if i > 0 {
+			bw.WriteString(",\n")
+		}
+		b, err := json.Marshal(item)
+		if err != nil {
+			return err
+		}
+		bw.Write(b)
+	}
+	_ = enc
+	bw.WriteString("\n]\n")
 	return bw.Flush()
 }

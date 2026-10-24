@@ -3,7 +3,6 @@ package engine
 import (
 	"math"
 	"math/bits"
-	"sort"
 
 	"antecipe/internal/domain"
 	"antecipe/internal/domain/rules"
@@ -11,11 +10,22 @@ import (
 	"antecipe/internal/service/validator"
 )
 
-// Concentrar aplica as regras de concentração ativas (na ordem do JSON) sobre os candidatos
-// sem recusa, em ordem determinística (vencimento, número, linha). Marca as recusas no lugar.
+// Concentrar aplica as regras de concentração ativas (na ordem do JSON) às notas candidatas
+// (as que passaram em todas as outras regras). A conta é estática e por fundo:
+//
+//	participação do grupo = (estoque do grupo + candidatas do grupo) ÷ (estoque do fundo + candidatas do fundo)
+//
+// Se passa do limite, todas as candidatas daquele grupo naquele fundo são recusadas.
+// O fundo de cada nota é o DOC_FUNDO dela (ou fundoPadrao, se vier vazio).
 // Também é usada na confirmação da cessão, sobre o estoque atual.
-func Concentrar(cands []*domain.Resultado, r rules.Regras, est domain.EstoqueFundo) []ErroConfig {
+func Concentrar(cands []*domain.Resultado, r rules.Regras, estoques map[string]domain.EstoqueFundo, fundoPadrao string) []ErroConfig {
 	var erros []ErroConfig
+	fundoDe := func(n *domain.Nota) string {
+		if f := document.Normalizar(n.DocFundo); f != "" {
+			return f
+		}
+		return fundoPadrao
+	}
 	for _, v := range r.Validadores {
 		if !v.Ativo || !validator.DeLote[v.Codigo] {
 			continue
@@ -41,56 +51,64 @@ func Concentrar(cands []*domain.Resultado, r rules.Regras, est domain.EstoqueFun
 			}
 			return n
 		}
-		fonte := est.PorCedente
-		if porSacado {
-			fonte = est.PorSacado
-		}
-		base := make(map[string]int64, len(fonte))
-		for doc, valor := range fonte {
-			base[grupoDe(doc)] += valor
+		docDe := func(n *domain.Nota) (string, string) {
+			if porSacado {
+				return n.DocSacado, n.NomeSacado
+			}
+			return n.DocCedente, n.NomeCedente
 		}
 
-		lista := make([]*domain.Resultado, 0, len(cands))
+		type chaveGrupo struct{ fundo, grupo string }
+		totLote := map[string]int64{}
+		grpLote := map[chaveGrupo]int64{}
+		var lista []*domain.Resultado
 		for _, c := range cands {
-			if len(c.Recusas) == 0 {
-				lista = append(lista, c)
+			if len(c.Recusas) > 0 {
+				continue
 			}
+			lista = append(lista, c)
+			f := fundoDe(c.Nota)
+			doc, _ := docDe(c.Nota)
+			totLote[f] += c.Nota.ValorCentavos
+			grpLote[chaveGrupo{f, grupoDe(doc)}] += c.Nota.ValorCentavos
 		}
-		sort.SliceStable(lista, func(i, j int) bool {
-			a, b := lista[i].Nota, lista[j].Nota
-			if !a.Vencimento.Equal(b.Vencimento) {
-				return a.Vencimento.Before(b.Vencimento)
+
+		// carteira de cada fundo agregada pelo grupo (calculada uma vez por fundo)
+		baseGrupo := map[string]map[string]int64{}
+		baseDo := func(f string) map[string]int64 {
+			if m, ok := baseGrupo[f]; ok {
+				return m
 			}
-			if a.Numero != b.Numero {
-				return a.Numero < b.Numero
+			m := map[string]int64{}
+			fonte := estoques[f].PorCedente
+			if porSacado {
+				fonte = estoques[f].PorSacado
 			}
-			return a.Linha < b.Linha
-		})
+			for doc, valor := range fonte {
+				m[grupoDe(doc)] += valor
+			}
+			baseGrupo[f] = m
+			return m
+		}
 
 		limiteBP := pct.Shift(2).Round(0).IntPart() // 10% → 1000 pontos-base
 		limite, _ := pct.Float64()
-		var aceitoTotal int64
-		aceitoGrupo := map[string]int64{}
-		for _, rs := range lista {
-			doc, nome := rs.Nota.DocCedente, rs.Nota.NomeCedente
-			if porSacado {
-				doc, nome = rs.Nota.DocSacado, rs.Nota.NomeSacado
-			}
-			g := grupoDe(doc)
-			face := rs.Nota.ValorCentavos
-			num := base[g] + aceitoGrupo[g] + face
-			den := est.TotalCentavos + aceitoTotal + face
+		barrados := map[chaveGrupo]float64{}
+		for k, soma := range grpLote {
+			num := baseDo(k.fundo)[k.grupo] + soma
+			den := estoques[k.fundo].TotalCentavos + totLote[k.fundo]
 			if excede(num, den, limiteBP) {
-				rs.Recusas = append(rs.Recusas, domain.Recusa{Codigo: v.Codigo, Dados: map[string]any{
-					"percentual_resultante": math.Round(float64(num)*10000/float64(den)) / 100,
-					"limite":                limite,
-					"grupo":                 g,
-					"grupo_nome":            nome,
-				}})
-				continue
+				barrados[k] = math.Round(float64(num)*10000/float64(den)) / 100
 			}
-			aceitoGrupo[g] += face
-			aceitoTotal += face
+		}
+		for _, rs := range lista {
+			doc, nome := docDe(rs.Nota)
+			k := chaveGrupo{fundoDe(rs.Nota), grupoDe(doc)}
+			if p, ok := barrados[k]; ok {
+				rs.Recusas = append(rs.Recusas, domain.Recusa{Codigo: v.Codigo, Dados: map[string]any{
+					"percentual_resultante": p, "limite": limite, "grupo": k.grupo, "grupo_nome": nome,
+				}})
+			}
 		}
 	}
 	return erros

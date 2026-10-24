@@ -45,6 +45,7 @@ func NovoServidor(d Deps) http.Handler {
 	mux.HandleFunc("GET /api/lotes/{id}", h.obterLote)
 	mux.HandleFunc("GET /api/lotes/{id}/notas", h.listarNotas)
 	mux.HandleFunc("GET /api/lotes/{id}/notas.csv", h.baixarNotas)
+	mux.HandleFunc("GET /api/lotes/{id}/resultado.json", h.baixarResultado)
 	mux.HandleFunc("POST /api/validar", h.validar)
 	mux.HandleFunc("POST /api/lotes/{id}/cessao", h.ceder)
 	mux.HandleFunc("GET /api/regras", h.obterRegras)

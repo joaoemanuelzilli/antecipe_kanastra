@@ -78,6 +78,14 @@ func Novo(ctx context.Context, amb Ambiente, log *slog.Logger) (*App, error) {
 		repo.Fechar()
 		return nil, err
 	}
+	sit, err := filesystem.LerSituacoes(filepath.Join(amb.DataDir, "cnpj_situacao_mock.csv"))
+	if err == nil {
+		err = repo.AtualizarSituacoes(ctx, sit)
+	}
+	if err != nil {
+		repo.Fechar()
+		return nil, err
+	}
 	cfg, err := config.NovoAtual(amb.ConfigPath, log)
 	if err != nil {
 		repo.Fechar()
@@ -126,7 +134,7 @@ func carregarSemente(dir string, log *slog.Logger) func() (postgres.Semente, err
 		if err != nil {
 			return postgres.Semente{}, err
 		}
-		sit, err := filesystem.LerSituacoes(filepath.Join(dir, "situacao_cadastral.csv"))
+		sit, err := filesystem.LerSituacoes(filepath.Join(dir, "cnpj_situacao_mock.csv"))
 		if err != nil {
 			return postgres.Semente{}, err
 		}

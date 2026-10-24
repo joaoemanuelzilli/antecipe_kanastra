@@ -22,7 +22,7 @@ var (
 	errChaveReutilizada = apperrors.Conflict("IDEMPOTENCY_KEY_REUTILIZADA", "Essa Idempotency-Key já foi usada em outra cessão.")
 )
 
-const msgVendidaEmParalelo = "Esta nota foi vendida em outra operação enquanto você revisava o lote."
+const msgVendidaEmParalelo = "Esta nota já consta na carteira de um fundo (foi vendida antes ou em outra operação ao mesmo tempo) e ficou fora desta cessão."
 
 // Ceder vende as aprovadas do lote numa transação:
 //  1. trava o lote (FOR UPDATE); se já foi cedido, devolve a mesma cessão (replay);

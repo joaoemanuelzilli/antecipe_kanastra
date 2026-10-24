@@ -22,7 +22,7 @@ type VersaoRegras struct {
 type EstoqueRepository interface {
 	// ignorarCessao (opcional) deixa de fora as notas de uma cessão: a prévia de um lote já cedido
 	// não pode contar as notas dele mesmo como duplicadas.
-	ContextoMotor(ctx context.Context, fundoCNPJ, ignorarCessao string) (map[string]Vendida, EstoqueFundo, error)
+	ContextoMotor(ctx context.Context, ignorarCessao string) (ContextoEstoque, error)
 }
 
 // SituacaoRepository consulta a situação cadastral (fonte simulada).

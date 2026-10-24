@@ -50,6 +50,18 @@ Go 1.27 (arquitetura hexagonal), PostgreSQL 18, OpenTelemetry (Jaeger + métrica
    - Ele repete os textos oficiais das recusas e recebe valores já formatados, então não inventa motivo nem erra conta.
    - O teste de logs do serviço pegou o cliente HTTP logando a busca do usuário, e isso foi corrigido.
 
+## Conferência com o gabarito oficial
+
+O estoque de 100 mil linhas enviado como lote bate com o `resultado_esperado_100k.json` publicado pelos organizadores:
+- **97.460 linhas idênticas**, com o mesmo status e os mesmos motivos na mesma ordem;
+- **3.094 linhas diferem só na situação cadastral**. O gabarito usou outra fonte de situação que o `cnpj_situacao_mock.csv` publicado: com a situação do próprio gabarito, a diferença é zero;
+- **nenhuma diferença em qualquer outra regra.**
+
+Para bater com o gabarito:
+- a data-base de cada nota é a `DATA_AQUISICAO` dela;
+- a concentração é estática e por fundo;
+- a duplicidade na simulação vale contra as cessões confirmadas, e a cessão bloqueia qualquer nota que já está no estoque.
+
 ## Resultados
 
 | Lote | Tempo total | Etapa mais lenta |

@@ -45,6 +45,7 @@ Outros comandos (`make` sozinho lista todos):
 | Comando | O que faz |
 |---|---|
 | `make down` | Para tudo (os dados ficam no volume) |
+| `make limpar` | Para tudo e apaga o banco local (volta ao estoque original) |
 | `make logs` / `make logs-ai` | Acompanha os logs da API / do assistente de IA |
 | `make gerar N=500000` | Gera um lote de teste em `amostras/` |
 | `make carga` | Mede lotes de 100k, 250k e 500k linhas |
@@ -55,13 +56,37 @@ Outros comandos (`make` sozinho lista todos):
 
 ### Arquivos para testar
 
-- `data/exemplo.csv`: 23 notas, 12 aprovadas e uma recusa de cada tipo. É bom para ver as mensagens.
+- `data/exemplo.csv`: 23 notas, 13 aprovadas e uma recusa de cada tipo. É bom para ver as mensagens. A última nota já está no estoque: é aprovada na simulação, mas fica fora da cessão, porque não se vende a mesma nota duas vezes.
+- **O próprio estoque** (`data/estoque_antecipe.zip`, o lote de 100 mil dos jurados). O resultado bate com o gabarito oficial (veja abaixo) e pode ser baixado no mesmo formato em `GET /api/lotes/{id}/resultado.json`.
 - `make gerar N=500000`: lote grande com mistura realista, determinístico pela semente:
   - ~80% aprováveis;
   - casos de cada regra;
-  - notas já vendidas (copiadas do estoque);
   - linhas repetidas e linhas quebradas.
-- O próprio estoque (`data/estoque_antecipe.zip`) também pode ser enviado: todas as notas voltam como **"Nota já vendida"**, que é o comportamento correto.
+
+### Conferência com o gabarito oficial
+
+O Notion publicou o `resultado_esperado_100k.json` (o estoque avaliado como lote). O teste `backend/test/gabarito` e o ponta a ponta `TestGabaritoPelaAPI` comparam o nosso resultado com ele, linha a linha:
+
+| | Linhas |
+|---|---|
+| Idênticas ao gabarito (status e motivos, na mesma ordem) | **97.460** |
+| Diferem **só** na situação cadastral | 3.094 |
+| Diferem em qualquer outra regra | **0** |
+
+A situação cadastral vem do `data/cnpj_situacao_mock.csv` publicado no Notion. O gabarito foi gerado com outra fonte de situação:
+- ele barra 87 sacados que o CSV diz estarem `ATIVA` ou que nem estão no CSV;
+- ele aprova 42 sacados que o CSV marca como `INAPTA`, `SUSPENSA` ou `BAIXADA`.
+
+Com a situação do próprio gabarito, o nosso motor reproduz o resultado esperado sem nenhuma diferença.
+
+> As cessões confirmadas entram na carteira do fundo e mudam a concentração. Para reproduzir o gabarito depois de vender notas (por exemplo, depois do `make demo-concorrencia`), rode `make limpar && make up` para voltar a um banco novo.
+
+Também dá para conferir pela linha de comando:
+
+```bash
+docker compose run --rm --no-deps -T api sh -c \
+  'unzip -p data/estoque_antecipe.zip | antecipe validar --formato json' > nosso.json
+```
 
 ---
 
@@ -81,6 +106,9 @@ curl "http://localhost:8080/api/lotes/<lote_id>/notas?status=recusada&motivo=PRA
 
 # 4. resultado em CSV (com motivo e o que fazer)
 curl -o resultado.csv http://localhost:8080/api/lotes/<lote_id>/notas.csv
+
+# resultado no formato do gabarito do desafio (linha, id, status, barrado_por)
+curl -o resultado.json http://localhost:8080/api/lotes/<lote_id>/resultado.json
 
 # 5. confirma a venda das aprovadas (idempotente)
 curl -X POST -H "Idempotency-Key: $(uuidgen)" http://localhost:8080/api/lotes/<lote_id>/cessao
@@ -220,15 +248,15 @@ As regras são lidas da **versão publicada** (a versão 1 vem de `data/validado
 | Código | Regra |
 |---|---|
 | `CNPJ_SACADO_VALIDO` | Dígitos verificadores, inclusive do **CNPJ alfanumérico** (desde jul/2026) |
-| `SITUACAO_CADASTRAL_SACADO` | Situação da fonte simulada `data/situacao_cadastral.csv`. CNPJ fora dela = `ATIVA` (configurável no YAML) |
+| `SITUACAO_CADASTRAL_SACADO` | Duas checagens: primeiro o `CNPJ_SACADO_VALIDO` confere se o CNPJ existe de fato (DV); depois a situação vem do `data/cnpj_situacao_mock.csv` oficial e tem que estar nas `situacoes_aceitas`. CNPJ fora do CSV = `ATIVA` (configurável no YAML), como no gabarito |
 | `TIPO_RECEBIVEL` | Tipos aceitos (sem diferenciar acento nem maiúsculas) |
 | `VALOR_MINIMO` | Valor ≥ mínimo |
-| `NAO_VENCIDA` | Vencimento depois da data-base (padrão 22/10/2026, a data-base dos dados) |
-| `PRAZO_MAXIMO` / `PRAZO_MINIMO` | Dias corridos até o vencimento |
-| `CONCENTRACAO_MAXIMA_SACADO` / `_CEDENTE` | (estoque do grupo + aceitas + nota) ÷ (estoque do fundo + aceitas + nota) ≤ limite, em ordem determinística |
+| `NAO_VENCIDA` | Vencimento depois da **data-base da nota**: a `DATA_AQUISICAO` dela. Sem essa coluna, vale a data-base do lote (padrão 22/10/2026). |
+| `PRAZO_MAXIMO` / `PRAZO_MINIMO` | Dias corridos da data-base da nota até o vencimento (os mesmos dias do preço) |
+| `CONCENTRACAO_MAXIMA_SACADO` / `_CEDENTE` | Estática e **por fundo** (o `DOC_FUNDO` de cada linha). A carteira de cada fundo = estoque do fundo, sem as notas que vieram no lote, + notas do lote que passaram nas outras regras. Se um grupo (raiz do CNPJ) passa do limite, todas as notas dele no lote são recusadas. |
 
 Sempre ligadas, porque são integridade e não política do fundo:
-- `DUPLICIDADE`: nota já vendida a qualquer um dos 18 fundos ou numa cessão.
+- `DUPLICIDADE`: na simulação, nota já vendida pelo portal (cessão confirmada). Na cessão, qualquer nota que já está no estoque de algum fundo fica de fora (`INSERT … ON CONFLICT`), então a mesma nota nunca é vendida duas vezes.
 - `DUPLICADA_NO_ARQUIVO`: a mesma nota repetida no arquivo enviado.
 - `FORMATO_INVALIDO`: linha ilegível. Só essa linha é recusada, e o resto do lote segue.
 

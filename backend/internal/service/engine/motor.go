@@ -21,8 +21,9 @@ import (
 type Contexto struct {
 	DataBase  time.Time
 	Situacao  func(cnpjNorm string) string
-	Vendidas  map[string]domain.Vendida
-	Estoque   domain.EstoqueFundo
+	Vendidas  map[string]domain.Vendida      // notas vendidas pelo portal (cessões confirmadas)
+	Estoques  map[string]domain.EstoqueFundo // carteira de cada fundo (CNPJ normalizado)
+	Itens     map[string]domain.ItemEstoque  // notas da carteira por chave (para não contar duas vezes as que vieram no lote)
 	Preco     *pricing.Calculadora
 	AoAvancar func(etapa string, feitas int) // opcional
 }
@@ -103,7 +104,7 @@ func Validar(notas []domain.Nota, r rules.Regras, c Contexto) Saida {
 			cands = append(cands, &res[i])
 		}
 	}
-	for _, e := range Concentrar(cands, r, c.Estoque) {
+	for _, e := range Concentrar(cands, r, carteiraSemOLote(c, res), document.Normalizar(r.Fundo.CNPJ)) {
 		cfg.add(e.Codigo, e.Mensagem)
 	}
 	avancar("concentracao", len(cands))
@@ -179,9 +180,14 @@ func avaliarNota(n *domain.Nota, rs *domain.Resultado, porNota []regraPorNota, v
 		}}}
 		return
 	}
-	rs.Dias = Dias(n.Vencimento, vctx.DataBase)
+	// a data-base da nota é a data em que o fundo a adquire (DATA_AQUISICAO); sem ela, vale a do lote
+	base := vctx.DataBase
+	if !n.Aquisicao.IsZero() {
+		base = n.Aquisicao
+	}
+	rs.Dias = Dias(n.Vencimento, base)
 	rs.Chave = domain.Chave(n)
-	it := validator.Item{Nota: n, Dias: rs.Dias, SacadoNorm: document.Normalizar(n.DocSacado)}
+	it := validator.Item{Nota: n, Dias: rs.Dias, SacadoNorm: document.Normalizar(n.DocSacado), DataBase: base}
 	for _, rg := range porNota {
 		ok, dados, err := rg.f(it, rg.p, vctx)
 		if err != nil {
@@ -223,4 +229,44 @@ func marcarDuplicidade(notas []domain.Nota, res []domain.Resultado, vendidas map
 			res[i].Recusas = append([]domain.Recusa{*rec}, res[i].Recusas...)
 		}
 	}
+}
+
+// carteiraSemOLote copia a carteira de cada fundo tirando as notas que vieram no próprio lote
+// (elas entram na conta como notas do lote). Assim, enviar a própria carteira como lote não conta nada duas vezes.
+func carteiraSemOLote(c Contexto, res []domain.Resultado) map[string]domain.EstoqueFundo {
+	out := make(map[string]domain.EstoqueFundo, len(c.Estoques))
+	for f, e := range c.Estoques {
+		cp := domain.EstoqueFundo{TotalCentavos: e.TotalCentavos, PorSacado: make(map[string]int64, len(e.PorSacado)), PorCedente: make(map[string]int64, len(e.PorCedente))}
+		for k, v := range e.PorSacado {
+			cp.PorSacado[k] = v
+		}
+		for k, v := range e.PorCedente {
+			cp.PorCedente[k] = v
+		}
+		out[f] = cp
+	}
+	if len(c.Itens) == 0 {
+		return out
+	}
+	vistas := make(map[string]bool, len(res))
+	for i := range res {
+		k := res[i].Chave
+		if k == "" || vistas[k] {
+			continue
+		}
+		vistas[k] = true
+		it, ok := c.Itens[k]
+		if !ok {
+			continue
+		}
+		e, ok := out[it.FundoDoc]
+		if !ok {
+			continue
+		}
+		e.TotalCentavos -= it.ValorCentavos
+		e.PorSacado[it.SacadoDoc] -= it.ValorCentavos
+		e.PorCedente[it.CedenteDoc] -= it.ValorCentavos
+		out[it.FundoDoc] = e
+	}
+	return out
 }

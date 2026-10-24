@@ -1,9 +1,11 @@
 package rest
 
 import (
+	"bufio"
 	"crypto/sha256"
 	"encoding/csv"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -17,6 +19,7 @@ import (
 	"antecipe/internal/platform/apperrors"
 	"antecipe/internal/platform/format"
 	"antecipe/internal/service/batch"
+	"antecipe/internal/service/export"
 	"antecipe/internal/service/message"
 	"antecipe/internal/service/pricing"
 )
@@ -253,5 +256,37 @@ func (h *Handlers) baixarNotas(w http.ResponseWriter, r *http.Request) {
 	cw.Flush()
 	if err != nil {
 		h.d.Log.ErrorContext(r.Context(), "falha no download do csv", "lote_id", id)
+	}
+}
+
+// baixarResultado devolve o resultado no formato do gabarito do desafio, em fluxo:
+// [{"linha":2,"id":"725714","status":"APROVADO"}, {"linha":3,"id":"…","status":"BARRADO","barrado_por":["…"]}]
+func (h *Handlers) baixarResultado(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if _, _, err := h.d.Lotes.Obter(r.Context(), id); err != nil {
+		EscreverErro(w, r, h.d.Log, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="resultado-`+id+`.json"`)
+	bw := bufio.NewWriterSize(w, 1<<20)
+	bw.WriteString("[\n")
+	primeira := true
+	err := h.d.Lotes.PercorrerNotas(r.Context(), id, domain.FiltroNotas{Ordenar: "linha"}, func(n domain.NotaLinha) error {
+		b, err := json.Marshal(export.ItemGabaritoDe(n.Linha, n.Numero, n.Status, n.Recusas))
+		if err != nil {
+			return err
+		}
+		if !primeira {
+			bw.WriteString(",\n")
+		}
+		primeira = false
+		_, err = bw.Write(b)
+		return err
+	})
+	bw.WriteString("\n]\n")
+	_ = bw.Flush()
+	if err != nil {
+		h.d.Log.ErrorContext(r.Context(), "falha no download do resultado", "lote_id", id)
 	}
 }

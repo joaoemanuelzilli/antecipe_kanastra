@@ -52,7 +52,7 @@ func semente(t *testing.T) func() (Semente, error) {
 		if err != nil {
 			return Semente{}, err
 		}
-		sit, err := filesystem.LerSituacoes("../../../../data/situacao_cadastral.csv")
+		sit, err := filesystem.LerSituacoes("../../../../data/cnpj_situacao_mock.csv")
 		return Semente{Estoque: est, Regras: reg, Situacoes: sit}, err
 	}
 }
@@ -82,7 +82,7 @@ func TestSemente(t *testing.T) {
 	if n := contar(t, r, "estoque"); n != 100554 {
 		t.Fatalf("estoque = %d", n)
 	}
-	if n := contar(t, r, "situacao_cadastral"); n != 6 {
+	if n := contar(t, r, "situacao_cadastral"); n != 3041 {
 		t.Fatalf("situações = %d", n)
 	}
 	v, err := r.Publicadas(ctx)
@@ -110,12 +110,14 @@ func TestContextoMotor(t *testing.T) {
 	if err := r.SemearSeVazio(ctx, semente(t)); err != nil {
 		t.Fatal(err)
 	}
-	vendidas, est, err := r.ContextoMotor(ctx, "92.234.400/0001-80", "")
+	c, err := r.ContextoMotor(ctx, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(vendidas) != 100554 || est.TotalCentavos != 5307402800 {
-		t.Fatalf("vendidas = %d, total = %d", len(vendidas), est.TotalCentavos)
+	// o estoque é a carteira dos fundos; nada foi vendido pelo portal ainda
+	est := c.Estoques["92234400000180"]
+	if len(c.Itens) != 100554 || len(c.Vendidas) != 0 || est.TotalCentavos != 5307402800 {
+		t.Fatalf("itens = %d, vendidas = %d, total = %d", len(c.Itens), len(c.Vendidas), est.TotalCentavos)
 	}
 	var raiz int64
 	for doc, v := range est.PorSacado {
@@ -127,8 +129,8 @@ func TestContextoMotor(t *testing.T) {
 		t.Fatalf("concentração = %.3f", pct)
 	}
 	sit, err := r.Situacoes(ctx)
-	if err != nil || sit["11122233000183"] != "INAPTA" {
-		t.Fatalf("situações = %v, %v", sit, err)
+	if err != nil || sit["03638251000194"] != "INAPTA" || len(sit) != 3041 {
+		t.Fatalf("situações = %d, %v", len(sit), err)
 	}
 }
 
@@ -190,4 +192,19 @@ func encaminhar(c net.Conn, destino string) {
 	go func() { io.Copy(d, c); d.Close() }()
 	io.Copy(c, d)
 	c.Close()
+}
+
+func TestAtualizarSituacoes(t *testing.T) {
+	r := novoRepo(t)
+	ctx := context.Background()
+	if err := r.SemearSeVazio(ctx, semente(t)); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.AtualizarSituacoes(ctx, map[string]string{"11122233000183": "INAPTA", "22233344000183": "ATIVA"}); err != nil {
+		t.Fatal(err)
+	}
+	sit, err := r.Situacoes(ctx)
+	if err != nil || len(sit) != 2 || sit["11122233000183"] != "INAPTA" {
+		t.Fatalf("situações = %v, %v", sit, err)
+	}
 }

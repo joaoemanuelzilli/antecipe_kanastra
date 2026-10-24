@@ -17,7 +17,10 @@ import (
 
 var dataBase = time.Date(2026, 10, 22, 0, 0, 0, 0, time.UTC)
 
-const sacado = "22.144.961/0001-02"
+const (
+	sacado = "22.144.961/0001-02"
+	fundo  = "92234400000180"
+)
 
 func regrasOriginais(t testing.TB) rules.Regras {
 	t.Helper()
@@ -42,7 +45,7 @@ func contexto(t testing.TB) Contexto {
 		DataBase: dataBase,
 		Situacao: func(string) string { return "ATIVA" },
 		Vendidas: map[string]domain.Vendida{},
-		Estoque:  domain.EstoqueFundo{TotalCentavos: 1_000_000_000_000, PorSacado: map[string]int64{}, PorCedente: map[string]int64{}},
+		Estoques: map[string]domain.EstoqueFundo{fundo: {TotalCentavos: 1_000_000_000_000, PorSacado: map[string]int64{}, PorCedente: map[string]int64{}}},
 		Preco:    calc,
 	}
 }
@@ -178,11 +181,13 @@ func TestDuplicidadeVemPrimeiro(t *testing.T) {
 
 func contextoConcentracao(t *testing.T, grupo int64) Contexto {
 	c := contexto(t)
-	c.Estoque = domain.EstoqueFundo{TotalCentavos: 100_000_000, PorSacado: map[string]int64{"22144961000102": grupo}, PorCedente: map[string]int64{}}
+	c.Estoques = map[string]domain.EstoqueFundo{fundo: {TotalCentavos: 100_000_000, PorSacado: map[string]int64{"22144961000102": grupo}, PorCedente: map[string]int64{}}}
 	return c
 }
 
-func TestConcentracaoDeterministica(t *testing.T) {
+func TestConcentracaoEstaticaRecusaOGrupoInteiro(t *testing.T) {
+	// estoque do fundo 100M com o grupo em 9M; o lote traz 3 notas do grupo de 500 mil:
+	// (9M + 1,5M) / (100M + 1,5M) = 10,34% > 10% ⇒ as 3 notas são recusadas, em qualquer ordem
 	base := []domain.Nota{
 		nota(2, func(n *domain.Nota) {
 			n.Numero = "A"
@@ -200,26 +205,70 @@ func TestConcentracaoDeterministica(t *testing.T) {
 			n.Vencimento = dataBase.AddDate(0, 0, 30)
 		}),
 	}
-	ordens := [][]int{{0, 1, 2}, {2, 1, 0}, {1, 2, 0}, {2, 0, 1}, {1, 0, 2}}
-	for _, ordem := range ordens {
+	for _, ordem := range [][]int{{0, 1, 2}, {2, 1, 0}, {1, 2, 0}} {
 		entrada := []domain.Nota{base[ordem[0]], base[ordem[1]], base[ordem[2]]}
 		s := Validar(entrada, regrasOriginais(t), contextoConcentracao(t, 9_000_000))
 		for _, r := range s.Resultados {
-			switch r.Nota.Numero {
-			case "A", "B":
-				if r.Status != domain.Aprovada {
-					t.Fatalf("ordem %v: %s recusada %v", ordem, r.Nota.Numero, codigos(r))
-				}
-			case "C":
-				if r.Status != domain.Recusada || r.Recusas[0].Codigo != "CONCENTRACAO_MAXIMA_SACADO" {
-					t.Fatalf("ordem %v: C = %v", ordem, codigos(r))
-				}
-				d := r.Recusas[0].Dados
-				if d["percentual_resultante"] != 10.34 || d["limite"] != 10.0 || d["grupo"] != "22144961" || d["grupo_nome"] != "SACADO LTDA" {
-					t.Fatalf("dados = %v", d)
-				}
+			if r.Status != domain.Recusada || r.Recusas[0].Codigo != "CONCENTRACAO_MAXIMA_SACADO" {
+				t.Fatalf("ordem %v: %s = %v", ordem, r.Nota.Numero, codigos(r))
+			}
+			d := r.Recusas[0].Dados
+			if d["percentual_resultante"] != 10.34 || d["limite"] != 10.0 || d["grupo"] != "22144961" || d["grupo_nome"] != "SACADO LTDA" {
+				t.Fatalf("dados = %v", d)
 			}
 		}
+	}
+	// com 2 notas: (9M + 1M) / (101M) = 9,90% ⇒ aprovadas
+	s := Validar(base[:2], regrasOriginais(t), contextoConcentracao(t, 9_000_000))
+	for _, r := range s.Resultados {
+		if r.Status != domain.Aprovada {
+			t.Fatalf("%s recusada: %v", r.Nota.Numero, codigos(r))
+		}
+	}
+}
+
+func TestConcentracaoPorFundo(t *testing.T) {
+	// o mesmo sacado passa do limite na carteira do fundo X, mas não na do fundo Y
+	c := contexto(t)
+	c.Estoques = map[string]domain.EstoqueFundo{}
+	notaDe := func(linha int, fundoDoc, sac, num string, valor int64) domain.Nota {
+		return nota(linha, func(n *domain.Nota) {
+			n.DocFundo = fundoDoc
+			n.DocSacado = sac
+			n.Numero = num
+			n.ValorCentavos = valor
+		})
+	}
+	outro := "11.122.233/0001-83"
+	notas := []domain.Nota{
+		notaDe(2, "07.511.678/0001-88", sacado, "X1", 2_000_000), // fundo X: grupo 2M de 10M = 20%
+		notaDe(3, "07.511.678/0001-88", outro, "X2", 8_000_000),  // fundo X: 80%
+		notaDe(4, "92.234.400/0001-80", sacado, "Y1", 1_000_000), // fundo Y: grupo 1M de 100M = 1%
+		notaDe(5, "92.234.400/0001-80", outro, "Y2", 99_000_000), // fundo Y: 99%
+	}
+	s := Validar(notas, regrasOriginais(t), c)
+	esperado := map[string]domain.Status{"X1": domain.Recusada, "X2": domain.Recusada, "Y1": domain.Aprovada, "Y2": domain.Recusada}
+	for _, r := range s.Resultados {
+		if r.Status != esperado[r.Nota.Numero] {
+			t.Errorf("%s = %v (%v)", r.Nota.Numero, r.Status, codigos(r))
+		}
+	}
+}
+
+func TestDataBaseEhAAquisicao(t *testing.T) {
+	// linha 2 do estoque: vence 07/10/2026, adquirida em 27/04/2026; a data-base do lote (22/10) não a torna vencida
+	n := nota(2, func(n *domain.Nota) {
+		n.Vencimento = time.Date(2026, 10, 7, 0, 0, 0, 0, time.UTC)
+		n.Aquisicao = time.Date(2026, 4, 27, 0, 0, 0, 0, time.UTC)
+	})
+	r := Validar([]domain.Nota{n}, regrasOriginais(t), contexto(t)).Resultados[0]
+	if r.Status != domain.Aprovada || r.Dias != 163 {
+		t.Fatalf("resultado = %v dias %d", codigos(r), r.Dias)
+	}
+	// sem aquisição, vale a data-base do lote
+	sem := nota(3, func(n *domain.Nota) { n.Vencimento = time.Date(2026, 10, 7, 0, 0, 0, 0, time.UTC) })
+	if r := Validar([]domain.Nota{sem}, regrasOriginais(t), contexto(t)).Resultados[0]; r.Recusas[0].Codigo != "NAO_VENCIDA" {
+		t.Fatalf("sem aquisição = %v", codigos(r))
 	}
 }
 
@@ -234,7 +283,7 @@ func TestConcentracaoJaEstourada(t *testing.T) {
 func TestAgrupamentoRaiz(t *testing.T) {
 	// estoque na filial 0001 com 9,9%; nota da filial 0002 (mesma raiz) passa do limite
 	c := contexto(t)
-	c.Estoque = domain.EstoqueFundo{TotalCentavos: 100_000_000, PorSacado: map[string]int64{"22144961000102": 9_900_000}, PorCedente: map[string]int64{}}
+	c.Estoques = map[string]domain.EstoqueFundo{fundo: {TotalCentavos: 100_000_000, PorSacado: map[string]int64{"22144961000102": 9_900_000}, PorCedente: map[string]int64{}}}
 	n := nota(2, func(n *domain.Nota) { n.DocSacado = "22.144.961/0002-93"; n.ValorCentavos = 500_000 })
 	r := Validar([]domain.Nota{n}, regrasOriginais(t), c).Resultados[0]
 	if r.Status != domain.Recusada || r.Recusas[0].Codigo != "CONCENTRACAO_MAXIMA_SACADO" {
@@ -297,7 +346,7 @@ func BenchmarkValidar500k(b *testing.B) {
 	}
 	r := regrasOriginais(b)
 	c := contexto(b)
-	c.Estoque = domain.EstoqueFundo{TotalCentavos: 5_307_402_800, PorSacado: map[string]int64{}, PorCedente: map[string]int64{}}
+	c.Estoques = map[string]domain.EstoqueFundo{fundo: {TotalCentavos: 5_307_402_800, PorSacado: map[string]int64{}, PorCedente: map[string]int64{}}}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		Validar(notas, r, c)
@@ -333,7 +382,7 @@ func TestChaveCanonica(t *testing.T) {
 
 func TestConcentracaoSemOverflow(t *testing.T) {
 	c := contexto(t)
-	c.Estoque = domain.EstoqueFundo{TotalCentavos: 10_000_000_000_000_000, PorSacado: map[string]int64{}, PorCedente: map[string]int64{}}
+	c.Estoques = map[string]domain.EstoqueFundo{fundo: {TotalCentavos: 10_000_000_000_000_000, PorSacado: map[string]int64{}, PorCedente: map[string]int64{}}}
 	r := Validar([]domain.Nota{nota(2, func(n *domain.Nota) { n.ValorCentavos = 999_999_999_999 })}, regrasOriginais(t), c).Resultados[0]
 	if r.Status != domain.Aprovada {
 		t.Fatalf("nota de participação ínfima recusada: %v", codigos(r))

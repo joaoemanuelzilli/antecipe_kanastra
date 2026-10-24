@@ -77,18 +77,17 @@ func TestCessaoReplay(t *testing.T) {
 		t.Fatalf("cessão = %d %v", resp.StatusCode, c)
 	}
 	ces := c["cessao"].(map[string]any)
-	if int(num(ces["notas_cedidas"])) != aprovadas || num(ces["liquido_centavos"]) != num(l["totais"].(map[string]any)["liquido_centavos"]) {
-		t.Fatalf("cessão = %v (aprovadas %d)", ces, aprovadas)
-	}
-	if len(c["notas_excluidas"].([]any)) != 0 {
-		t.Fatalf("excluídas = %v", c["notas_excluidas"])
+	// a última nota do exemplo já está no estoque: aprovada na simulação, fica fora da venda
+	exc := c["notas_excluidas"].([]any)
+	if int(num(ces["notas_cedidas"])) != aprovadas-1 || len(exc) != 1 || exc[0].(map[string]any)["codigo"] != "DUPLICIDADE" || num(exc[0].(map[string]any)["linha"]) != 24 {
+		t.Fatalf("cessão = %v, excluídas = %v (aprovadas %d)", ces, exc, aprovadas)
 	}
 	resp, c2 := a.ceder(t, id, "chave-1")
 	if resp.StatusCode != http.StatusOK || resp.Header.Get("Idempotent-Replay") != "true" || c2["cessao"].(map[string]any)["id"] != ces["id"] {
 		t.Fatalf("replay = %d %v", resp.StatusCode, c2)
 	}
-	if n := a.contarCedidas(t); n != aprovadas {
-		t.Fatalf("cedidas = %d, esperado %d", n, aprovadas)
+	if n := a.contarCedidas(t); n != aprovadas-1 {
+		t.Fatalf("cedidas = %d, esperado %d", n, aprovadas-1)
 	}
 	_, l2 := a.get(t, "/api/lotes/"+id)
 	if l2["cessao"] == nil {

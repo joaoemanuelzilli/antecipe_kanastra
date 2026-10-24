@@ -267,6 +267,21 @@ Download (`text/csv; charset=utf-8`, `;`, com `Content-Disposition: attachment`)
 
 ---
 
+## `GET /api/lotes/{id}/resultado.json`
+
+Resultado no **formato do gabarito do desafio** (`resultado_esperado_100k.json`), em fluxo, na ordem das linhas:
+
+```json
+[
+{"linha":2,"id":"725714","status":"APROVADO"},
+{"linha":3,"id":"1-759172","status":"BARRADO","barrado_por":["CONCENTRACAO_MAXIMA_SACADO"]}
+]
+```
+
+`barrado_por` traz todas as regras que a nota não cumpriu, na ordem do JSON de regras.
+
+---
+
 ## `POST /api/lotes/{id}/cessao`: confirmar a venda
 
 Header **`Idempotency-Key`**: gere um `crypto.randomUUID()` quando o diálogo de confirmação abrir e reutilize o mesmo valor em novas tentativas. Trave o botão durante o envio.
@@ -502,6 +517,12 @@ O painel do assistente fala com outro serviço: o AgentOS na porta 7777, que o n
 ## Histórico do contrato
 
 - **v1 · 24/10/2026 11:00:** versão inicial.
+- **v1.4 · 24/10/2026 13:10:** a regra muda para bater com o gabarito oficial.
+  - A data-base de cada nota passa a ser a `DATA_AQUISICAO` dela, quando houver: `dias`, prazo, vencimento e preço contam a partir dela.
+  - A concentração fica estática e por fundo, e o texto vira "Com as notas deste lote, …".
+  - A `DUPLICIDADE` na simulação passa a valer só contra cessões confirmadas. Notas do estoque são barradas na cessão (`notas_excluidas`).
+  - Entra a rota `GET /api/lotes/{id}/resultado.json`.
+  - A situação cadastral vem do `data/cnpj_situacao_mock.csv` oficial.
 - **v1.3 · 24/10/2026 12:45:** seção do assistente de IA. É um serviço à parte, servido em `/ai/` e detalhado em `ai/README.md`. Esta API não mudou.
 - **v1.2 · 24/10/2026 12:15:** alinhado ao backend implementado. Erros de regras viram `422` (`REGRAS_INVALIDAS`, `SEM_MUDANCAS`). Entram `409 IDEMPOTENCY_KEY_REUTILIZADA` no upload e na cessão, `400 DATA_BASE_INVALIDA`/`UPLOAD_INVALIDO`, `?data_base` no `/validar` com CSV, `resumo` na resposta do PUT, `opcional` no catálogo, `grupo_nome` na concentração, campos extras em `DUPLICIDADE` e a rota `/metrics`.
 - **v1.1 · 24/10/2026 11:10:** preço padrão passa a ser **juros compostos** (`DESCONTO_COMPOSTO`), trocável em `config/antecipe.yaml`. Entram `precificacao` em `/config`, `/lotes/{id}` e `/validar`, `calculo.metodo` nas notas e `precificacao_efetiva` em `/regras`. Valores dos exemplos recalculados (R$ 10.000 a 30 dias → R$ 9.803,92).

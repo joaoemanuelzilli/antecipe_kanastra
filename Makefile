@@ -4,7 +4,7 @@ SHELL := /bin/bash
 N ?= 500000
 SEMENTE ?= 42
 
-.PHONY: ajuda up down logs logs-ai test test-ai test-integracao gerar carga check demo-concorrencia
+.PHONY: ajuda up down limpar logs logs-ai test test-ai test-integracao gerar carga check demo-concorrencia
 
 ajuda: ## Mostra os comandos
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-20s %s\n", $$1, $$2}'
@@ -36,6 +36,9 @@ up: .env ## Sobe Postgres, API e front (primeira vez: alguns minutos)
 
 down: ## Para tudo (os dados do banco ficam no volume)
 	docker compose down
+
+limpar: ## Para tudo e APAGA o banco local (volta ao estoque original na próxima subida)
+	docker compose down -v
 
 logs: ## Acompanha os logs da API
 	docker compose logs -f api

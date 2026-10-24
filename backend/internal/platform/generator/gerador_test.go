@@ -67,14 +67,14 @@ func avaliar(t *testing.T, conteudo []byte, est []domain.Nota) engine.Saida {
 	}
 	b, _ := os.ReadFile("../../../../data/validadores_antecipe.json")
 	r, _ := rules.Ler(b)
-	sit, err := filesystem.LerSituacoes("../../../../data/situacao_cadastral.csv")
+	sit, err := filesystem.LerSituacoes("../../../../data/cnpj_situacao_mock.csv")
 	if err != nil {
 		t.Fatal(err)
 	}
 	calc, _ := pricing.Nova(pricing.Config{Metodo: pricing.Composto, TaxaMensalPercentual: decimal.NewFromInt(2), BaseDias: 30})
-	vendidas, ef := filesystem.ContextoDeEstoque(est, r.Fundo.CNPJ)
+	c := filesystem.ContextoDeEstoque(est)
 	return engine.Validar(notas, r, engine.Contexto{
-		DataBase: dataBase, Situacao: filesystem.SituacaoCom(sit, "ATIVA"), Vendidas: vendidas, Estoque: ef, Preco: calc,
+		DataBase: dataBase, Situacao: filesystem.SituacaoCom(sit, "ATIVA"), Vendidas: c.Vendidas, Estoques: c.Estoques, Itens: c.Itens, Preco: calc,
 	})
 }
 
@@ -85,7 +85,7 @@ func TestGerarMistura(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := avaliar(t, buf.Bytes(), est)
-	for _, c := range []string{"DUPLICIDADE", "DUPLICADA_NO_ARQUIVO", "FORMATO_INVALIDO", "PRAZO_MAXIMO", "NAO_VENCIDA", "VALOR_MINIMO", "TIPO_RECEBIVEL", "CNPJ_SACADO_VALIDO", "SITUACAO_CADASTRAL_SACADO"} {
+	for _, c := range []string{"DUPLICADA_NO_ARQUIVO", "FORMATO_INVALIDO", "PRAZO_MAXIMO", "NAO_VENCIDA", "VALOR_MINIMO", "TIPO_RECEBIVEL", "CNPJ_SACADO_VALIDO", "SITUACAO_CADASTRAL_SACADO"} {
 		if s.Motivos[c] == 0 {
 			t.Errorf("nenhuma recusa %s (motivos %v)", c, s.Motivos)
 		}
@@ -103,7 +103,7 @@ func TestExemploCobreTodosOsCodigos(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := avaliar(t, buf.Bytes(), est)
-	for _, c := range []string{"CNPJ_SACADO_VALIDO", "SITUACAO_CADASTRAL_SACADO", "TIPO_RECEBIVEL", "VALOR_MINIMO", "NAO_VENCIDA", "PRAZO_MAXIMO", "CONCENTRACAO_MAXIMA_SACADO", "DUPLICIDADE", "DUPLICADA_NO_ARQUIVO", "FORMATO_INVALIDO"} {
+	for _, c := range []string{"CNPJ_SACADO_VALIDO", "SITUACAO_CADASTRAL_SACADO", "TIPO_RECEBIVEL", "VALOR_MINIMO", "NAO_VENCIDA", "PRAZO_MAXIMO", "CONCENTRACAO_MAXIMA_SACADO", "DUPLICADA_NO_ARQUIVO", "FORMATO_INVALIDO"} {
 		if s.Motivos[c] == 0 {
 			t.Errorf("exemplo sem recusa %s (motivos %v)", c, s.Motivos)
 		}

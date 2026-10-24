@@ -33,7 +33,7 @@ func TestGerarEValidar(t *testing.T) {
 	var out bytes.Buffer
 	errOut.Reset()
 	args := []string{"validar", "--regras", dados + "validadores_antecipe.json", "--estoque", dados + "estoque_antecipe.zip",
-		"--config", arqConfig, "--situacao", dados + "situacao_cadastral.csv"}
+		"--config", arqConfig, "--situacao", dados + "cnpj_situacao_mock.csv"}
 	if code := run(args, &lote, &out, &errOut); code != 0 {
 		t.Fatalf("validar = %d (%s)", code, errOut.String())
 	}
@@ -68,7 +68,7 @@ func TestValidarNaoInjetaFormula(t *testing.T) {
 		"ANTECIPE FIDC;92.234.400/0001-80;CED;10.062.050/0001-57;=HYPERLINK(\"http://x\");22.144.961/0001-02;1;Duplicata;1000,00;21/11/2026;\n"
 	var out, errOut bytes.Buffer
 	args := []string{"validar", "--regras", dados + "validadores_antecipe.json", "--estoque", dados + "estoque_antecipe.zip",
-		"--config", arqConfig, "--situacao", dados + "situacao_cadastral.csv"}
+		"--config", arqConfig, "--situacao", dados + "cnpj_situacao_mock.csv"}
 	if code := run(args, strings.NewReader(entrada), &out, &errOut); code != 0 {
 		t.Fatalf("validar = %d (%s)", code, errOut.String())
 	}

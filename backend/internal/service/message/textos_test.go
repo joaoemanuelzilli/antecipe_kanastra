@@ -43,7 +43,7 @@ func TestTextoValorMinimo(t *testing.T) {
 
 func TestTextoConcentracao(t *testing.T) {
 	x := Recusa("CONCENTRACAO_MAXIMA_SACADO", map[string]any{"percentual_resultante": 12.61, "limite": 10.0, "grupo": "58206002", "grupo_nome": "SERRALHERIA VIOLETA S.A."})
-	if x.Mensagem != "Com esta nota, SERRALHERIA VIOLETA S.A. ficaria com 12,61% da carteira do fundo, e o limite é 10%." {
+	if x.Mensagem != "Com as notas deste lote, SERRALHERIA VIOLETA S.A. ficaria com 12,61% da carteira do fundo, e o limite é 10%." {
 		t.Fatalf("mensagem = %q", x.Mensagem)
 	}
 }
@@ -120,7 +120,7 @@ func TestTextoCampoVazio(t *testing.T) {
 
 func TestTextoLimiteComDecimais(t *testing.T) {
 	x := Recusa("CONCENTRACAO_MAXIMA_CEDENTE", map[string]any{"percentual_resultante": 10.04, "limite": 7.5, "grupo": "x", "grupo_nome": "Y"})
-	if x.Mensagem != "Com esta nota, sua empresa ficaria com 10,04% da carteira do fundo, e o limite é 7,5%." {
+	if x.Mensagem != "Com as notas deste lote, a empresa ficaria com 10,04% da carteira do fundo, e o limite é 7,5%." {
 		t.Fatalf("mensagem = %q", x.Mensagem)
 	}
 }

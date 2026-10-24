@@ -306,7 +306,7 @@ func (s *Servico) contextoMotor(ctx context.Context, v domain.VersaoRegras, p do
 	if err != nil {
 		return engine.Contexto{}, apperrors.Unavailable("PRECIFICACAO_INVALIDA", "A configuração de preço está inválida. Avise o gestor do fundo.").Wrap(err)
 	}
-	vendidas, est, err := s.d.Estoque.ContextoMotor(ctx, v.Regras.Fundo.CNPJ, ignorarCessao)
+	est, err := s.d.Estoque.ContextoMotor(ctx, ignorarCessao)
 	if err != nil {
 		return engine.Contexto{}, err
 	}
@@ -323,7 +323,7 @@ func (s *Servico) contextoMotor(ctx context.Context, v domain.VersaoRegras, p do
 			}
 			return padrao
 		},
-		Vendidas: vendidas, Estoque: est, Preco: calc,
+		Vendidas: est.Vendidas, Estoques: est.Estoques, Itens: est.Itens, Preco: calc,
 	}, nil
 }
 

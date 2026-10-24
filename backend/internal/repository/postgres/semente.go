@@ -89,3 +89,23 @@ func (r *Repo) SemearSeVazio(ctx context.Context, carregar func() (Semente, erro
 	}
 	return tx.Commit(ctx)
 }
+
+// AtualizarSituacoes troca a situação cadastral inteira pela do CSV (roda a cada subida: a fonte oficial manda).
+func (r *Repo) AtualizarSituacoes(ctx context.Context, m map[string]string) error {
+	tx, err := r.Pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background()) //nolint:errcheck
+	if _, err := tx.Exec(ctx, `DELETE FROM situacao_cadastral`); err != nil {
+		return err
+	}
+	linhas := make([][]any, 0, len(m))
+	for cnpj, sit := range m {
+		linhas = append(linhas, []any{cnpj, sit})
+	}
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"situacao_cadastral"}, []string{"cnpj", "situacao"}, pgx.CopyFromRows(linhas)); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}

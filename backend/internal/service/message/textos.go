@@ -39,7 +39,7 @@ var acoes = map[string]string{
 	"VALOR_MINIMO":                "Notas de valor menor não podem ser antecipadas aqui.",
 	"NAO_VENCIDA":                 "Cobre esta nota diretamente do seu cliente.",
 	"PRAZO_MINIMO":                "Esta nota está perto demais do vencimento para ser antecipada.",
-	"CONCENTRACAO_MAXIMA_SACADO":  "Tente com notas de outros clientes ou aguarde o vencimento das notas atuais desse cliente.",
+	"CONCENTRACAO_MAXIMA_SACADO":  "Envie menos notas desse cliente, ou espere vencerem notas dele que o fundo já tem.",
 	"CONCENTRACAO_MAXIMA_CEDENTE": "Aguarde o vencimento de parte das notas já vendidas antes de antecipar mais.",
 	"DUPLICIDADE":                 "Não é preciso enviar de novo.",
 	"DUPLICADA_NO_ARQUIVO":        "Remova a linha repetida. A primeira ocorrência foi avaliada normalmente.",
@@ -86,9 +86,9 @@ func Recusa(codigo string, dados map[string]any) Texto {
 	case "PRAZO_MINIMO":
 		t.Mensagem = "Esta nota vence em " + format.Inteiro(int(d.inteiro("dias"))) + " dias e o fundo compra notas com pelo menos " + format.Inteiro(int(d.inteiro("minimo"))) + " dias."
 	case "CONCENTRACAO_MAXIMA_SACADO":
-		t.Mensagem = "Com esta nota, " + d.texto("grupo_nome") + " ficaria com " + format.Percentual(d.real("percentual_resultante"), 2) + " da carteira do fundo, e o limite é " + limite(d.real("limite")) + "."
+		t.Mensagem = "Com as notas deste lote, " + d.texto("grupo_nome") + " ficaria com " + format.Percentual(d.real("percentual_resultante"), 2) + " da carteira do fundo, e o limite é " + limite(d.real("limite")) + "."
 	case "CONCENTRACAO_MAXIMA_CEDENTE":
-		t.Mensagem = "Com esta nota, sua empresa ficaria com " + format.Percentual(d.real("percentual_resultante"), 2) + " da carteira do fundo, e o limite é " + limite(d.real("limite")) + "."
+		t.Mensagem = "Com as notas deste lote, a empresa ficaria com " + format.Percentual(d.real("percentual_resultante"), 2) + " da carteira do fundo, e o limite é " + limite(d.real("limite")) + "."
 	case "DUPLICIDADE":
 		t.Mensagem = "Esta nota (nº " + d.texto("numero") + ", vencimento " + format.DataISO(d.texto("vencimento")) + ") já foi cedida a um fundo em " + format.DataISO(d.texto("vendida_em")) + "."
 		if orig, atual := d.inteiro("valor_original_centavos"), d.inteiro("valor_centavos"); orig > 0 && orig != atual {

@@ -187,7 +187,7 @@ func TestUploadExemploConcluiEMostraProgresso(t *testing.T) {
 	for _, m := range l["motivos"].([]any) {
 		motivos[m.(map[string]any)["codigo"].(string)] = true
 	}
-	for _, c := range []string{"DUPLICIDADE", "PRAZO_MAXIMO", "CONCENTRACAO_MAXIMA_SACADO", "FORMATO_INVALIDO"} {
+	for _, c := range []string{"DUPLICADA_NO_ARQUIVO", "PRAZO_MAXIMO", "CONCENTRACAO_MAXIMA_SACADO", "FORMATO_INVALIDO", "SITUACAO_CADASTRAL_SACADO"} {
 		if !motivos[c] {
 			t.Errorf("motivo %s ausente: %v", c, l["motivos"])
 		}
@@ -206,7 +206,7 @@ func TestUploadExemploConcluiEMostraProgresso(t *testing.T) {
 	if num(item["liquido_centavos"]) != 980392 || item["calculo"].(map[string]any)["metodo"] != "DESCONTO_COMPOSTO" {
 		t.Fatalf("aprovada = %v", item)
 	}
-	if item["sacado"].(map[string]any)["documento"] != "55.566.677/0001-83" {
+	if item["sacado"].(map[string]any)["documento"] != "50.000.017/0001-17" {
 		t.Fatalf("documento = %v", item["sacado"])
 	}
 }

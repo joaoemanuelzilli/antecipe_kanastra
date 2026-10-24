@@ -59,7 +59,7 @@ func LerSituacoes(caminho string) (map[string]string, error) {
 		}
 		if primeira {
 			primeira = false
-			if strings.EqualFold(strings.TrimSpace(rec[0]), "CNPJ") {
+			if c := strings.ToUpper(strings.TrimSpace(rec[0])); c == "CNPJ" || c == "DOC" {
 				continue
 			}
 		}
@@ -78,22 +78,30 @@ func SituacaoCom(m map[string]string, padrao string) func(string) string {
 	}
 }
 
-// ContextoDeEstoque monta as notas já vendidas (todos os fundos) e as somas do fundo das regras.
-func ContextoDeEstoque(estoque []domain.Nota, fundoCNPJ string) (map[string]domain.Vendida, domain.EstoqueFundo) {
-	fundo := document.Normalizar(fundoCNPJ)
-	vendidas := make(map[string]domain.Vendida, len(estoque))
-	est := domain.EstoqueFundo{PorSacado: map[string]int64{}, PorCedente: map[string]int64{}}
+// ContextoDeEstoque monta a carteira de cada fundo a partir do estoque. Nenhuma nota conta como
+// "vendida pelo portal" (isso só existe depois de uma cessão); a venda dupla é barrada na cessão.
+func ContextoDeEstoque(estoque []domain.Nota) domain.ContextoEstoque {
+	c := domain.ContextoEstoque{Vendidas: map[string]domain.Vendida{}, Estoques: map[string]domain.EstoqueFundo{}, Itens: make(map[string]domain.ItemEstoque, len(estoque))}
 	for i := range estoque {
 		n := &estoque[i]
 		if n.ErroFormato != nil {
 			continue
 		}
-		vendidas[domain.Chave(n)] = domain.Vendida{Em: n.Aquisicao, ValorCentavos: n.ValorCentavos}
-		if document.Normalizar(n.DocFundo) == fundo {
-			est.TotalCentavos += n.ValorCentavos
-			est.PorSacado[document.Normalizar(n.DocSacado)] += n.ValorCentavos
-			est.PorCedente[document.Normalizar(n.DocCedente)] += n.ValorCentavos
-		}
+		it := domain.ItemEstoque{FundoDoc: document.Normalizar(n.DocFundo), SacadoDoc: document.Normalizar(n.DocSacado), CedenteDoc: document.Normalizar(n.DocCedente), ValorCentavos: n.ValorCentavos}
+		AcumularEstoque(&c, domain.Chave(n), it)
 	}
-	return vendidas, est
+	return c
+}
+
+// AcumularEstoque soma uma nota à carteira do fundo dela.
+func AcumularEstoque(c *domain.ContextoEstoque, chave string, it domain.ItemEstoque) {
+	c.Itens[chave] = it
+	e, ok := c.Estoques[it.FundoDoc]
+	if !ok {
+		e = domain.EstoqueFundo{PorSacado: map[string]int64{}, PorCedente: map[string]int64{}}
+	}
+	e.TotalCentavos += it.ValorCentavos
+	e.PorSacado[it.SacadoDoc] += it.ValorCentavos
+	e.PorCedente[it.CedenteDoc] += it.ValorCentavos
+	c.Estoques[it.FundoDoc] = e
 }

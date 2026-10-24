@@ -249,7 +249,23 @@ Depois disso, a IA seguiu o plano até a Tarefa 13 (12:15):
 >
 > verifique novamente o notion q eles subiram um csv para fazer a verificação do cnpj, atente-se que são dois tipos de verificação, o primeiro pra ver se de fato é um cnpj válido, e depois vc verifica nesse csv a situação do cnpj para adequar-se nas regras padrões do fundo
 
-**O que a IA fez:** _(em andamento)_
+**O que a IA fez:**
+
+1. Fez o `git pull`. Entraram o assistente de IA do colega (`ai/`, Agno + AgentOS via OpenRouter), o contrato v1.3 e o `prompts2.md`. O merge foi limpo.
+2. Releu o Notion e achou dois arquivos novos: `cnpj_situacao_mock.csv` (3.041 CNPJs) e `resultado_esperado_100k.json` (o gabarito: o estoque de 100 mil linhas avaliado como lote).
+3. Fez a engenharia reversa do gabarito com scripts locais:
+   - `TIPO_RECEBIVEL` e `VALOR_MINIMO` batem 100%.
+   - A data-base de cada nota é a `DATA_AQUISICAO` dela. Com isso, `PRAZO_MAXIMO` bate 100% e `NAO_VENCIDA` fica zerada.
+   - A concentração é estática e por fundo.
+   - A situação do gabarito vem de outra fonte, diferente do CSV publicado.
+4. Ajustou o motor com testes:
+   - data-base por nota;
+   - concentração estática por fundo sobre a carteira (estoque sem as notas do lote + notas elegíveis do lote);
+   - duplicidade na simulação só contra cessões, com a cessão bloqueando notas do estoque;
+   - situação cadastral pelo CSV oficial, recarregada a cada subida, depois da checagem do DV do CNPJ.
+5. Criou a rota `GET /api/lotes/{id}/resultado.json` e o `antecipe validar --formato json`, no formato do gabarito, além dos testes `backend/test/gabarito` e `TestGabaritoPelaAPI`.
+6. **Resultado:** 97.460 linhas idênticas ao gabarito, 3.094 diferentes só na situação cadastral (por causa da fonte divergente dos organizadores) e 0 em outras regras. Validado também no Docker com banco novo (100 mil linhas em ~1,3 s).
+7. Criou o `make limpar`, que zera o banco local. Atualizou README, contrato (v1.4), plano e relatório.
 
 **O que o time fez com a resposta:** _(preencher)_
 

@@ -11,7 +11,7 @@ import (
 	"antecipe/internal/domain"
 	"antecipe/internal/domain/rules"
 	"antecipe/internal/platform/apperrors"
-	"antecipe/internal/platform/document"
+	"antecipe/internal/repository/filesystem"
 )
 
 var (
@@ -20,64 +20,38 @@ var (
 	_ domain.RegrasRepository   = (*Repo)(nil)
 )
 
-// ContextoMotor carrega as chaves já vendidas (todos os fundos) e as somas do fundo, em consultas agrupadas.
-func (r *Repo) ContextoMotor(ctx context.Context, fundoCNPJ, ignorarCessao string) (map[string]domain.Vendida, domain.EstoqueFundo, error) {
-	est := domain.EstoqueFundo{PorSacado: map[string]int64{}, PorCedente: map[string]int64{}}
+// ContextoMotor lê a carteira (estoque) uma vez e monta: as notas vendidas pelo portal (cessões),
+// a carteira de cada fundo e as notas por chave. ignorarCessao deixa de fora as notas de uma cessão.
+func (r *Repo) ContextoMotor(ctx context.Context, ignorarCessao string) (domain.ContextoEstoque, error) {
+	c := domain.ContextoEstoque{Vendidas: map[string]domain.Vendida{}, Estoques: map[string]domain.EstoqueFundo{}, Itens: make(map[string]domain.ItemEstoque, 131072)}
 	var ignorar any
 	if uuidValido(ignorarCessao) {
 		ignorar = ignorarCessao
 	}
-	rows, err := r.Pool.Query(ctx, `SELECT chave, aquisicao, valor_centavos FROM estoque WHERE ($1::uuid IS NULL OR cessao_id IS DISTINCT FROM $1::uuid)`, ignorar)
+	rows, err := r.Pool.Query(ctx, `
+		SELECT chave, fundo_doc, sacado_doc, cedente_doc, valor_centavos, aquisicao, origem
+		FROM estoque WHERE ($1::uuid IS NULL OR cessao_id IS DISTINCT FROM $1::uuid)`, ignorar)
 	if err != nil {
-		return nil, est, err
+		return c, err
 	}
-	vendidas := make(map[string]domain.Vendida, 131072)
+	defer rows.Close()
 	for rows.Next() {
-		var chave string
+		var chave, origem string
+		var it domain.ItemEstoque
 		var aq *time.Time
-		var valor int64
-		if err := rows.Scan(&chave, &aq, &valor); err != nil {
-			rows.Close()
-			return nil, est, err
+		if err := rows.Scan(&chave, &it.FundoDoc, &it.SacadoDoc, &it.CedenteDoc, &it.ValorCentavos, &aq, &origem); err != nil {
+			return c, err
 		}
-		v := domain.Vendida{ValorCentavos: valor}
-		if aq != nil {
-			v.Em = *aq
-		}
-		vendidas[chave] = v
-	}
-	if err := rows.Err(); err != nil {
-		return nil, est, err
-	}
-
-	fundo := document.Normalizar(fundoCNPJ)
-	somar := func(coluna string, destino map[string]int64) error {
-		rows, err := r.Pool.Query(ctx, `SELECT `+coluna+`, sum(valor_centavos)::bigint FROM estoque
-			WHERE fundo_doc = $1 AND ($2::uuid IS NULL OR cessao_id IS DISTINCT FROM $2::uuid) GROUP BY 1`, fundo, ignorar)
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-		for rows.Next() {
-			var doc string
-			var soma int64
-			if err := rows.Scan(&doc, &soma); err != nil {
-				return err
+		filesystem.AcumularEstoque(&c, chave, it)
+		if origem == "cessao" {
+			v := domain.Vendida{ValorCentavos: it.ValorCentavos}
+			if aq != nil {
+				v.Em = *aq
 			}
-			destino[doc] = soma
+			c.Vendidas[chave] = v
 		}
-		return rows.Err()
 	}
-	if err := somar("sacado_doc", est.PorSacado); err != nil {
-		return nil, est, err
-	}
-	if err := somar("cedente_doc", est.PorCedente); err != nil {
-		return nil, est, err
-	}
-	for _, v := range est.PorSacado {
-		est.TotalCentavos += v
-	}
-	return vendidas, est, nil
+	return c, rows.Err()
 }
 
 // Situacoes devolve a situação cadastral simulada (CNPJ normalizado → situação).

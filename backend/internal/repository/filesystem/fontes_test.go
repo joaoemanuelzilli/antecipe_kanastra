@@ -35,10 +35,11 @@ func TestContextoDeEstoque(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	vendidas, est := ContextoDeEstoque(notas, "92.234.400/0001-80")
-	if len(vendidas) != 100554 {
-		t.Fatalf("vendidas = %d", len(vendidas))
+	c := ContextoDeEstoque(notas)
+	if len(c.Itens) != 100554 || len(c.Vendidas) != 0 || len(c.Estoques) != 18 {
+		t.Fatalf("itens = %d, vendidas = %d, fundos = %d", len(c.Itens), len(c.Vendidas), len(c.Estoques))
 	}
+	est := c.Estoques["92234400000180"]
 	if est.TotalCentavos != 5307402800 {
 		t.Fatalf("total = %d", est.TotalCentavos)
 	}
@@ -55,15 +56,15 @@ func TestContextoDeEstoque(t *testing.T) {
 }
 
 func TestLerSituacoes(t *testing.T) {
-	m, err := LerSituacoes("../../../../data/situacao_cadastral.csv")
+	m, err := LerSituacoes("../../../../data/cnpj_situacao_mock.csv")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(m) != 6 || m["11122233000183"] != "INAPTA" || m["22233344000183"] != "BAIXADA" {
-		t.Fatalf("situações = %v", m)
+	if len(m) != 3041 || m["03638251000194"] != "INAPTA" || m["30897628000100"] != "BAIXADA" || m["15507023000164"] != "SUSPENSA" {
+		t.Fatalf("situações = %d", len(m))
 	}
 	f := SituacaoCom(m, "ATIVA")
-	if f("11122233000183") != "INAPTA" || f("99999999000199") != "ATIVA" {
+	if f("03638251000194") != "INAPTA" || f("99999999000199") != "ATIVA" {
 		t.Fatal("SituacaoCom não aplica o padrão")
 	}
 }

@@ -463,3 +463,22 @@ O assistente de IA tem a API dele, servida pelo AgentOS na porta 7777 e, pelo ng
 ## 18. Fica a critério de quem constrói
 
 Estrutura interna dos structs, tamanho dos blocos e número de workers, nomes de funções, formato exato do CSV de saída da CLI, mistura de casos do gerador, copy fina dos textos (mantendo o formato decisão → regra → consequência → ação) e detalhes do nginx e dos Dockerfiles.
+
+---
+
+## 19. Atualização das 13:10: alinhamento com o gabarito oficial
+
+O Notion publicou mais dois arquivos: `cnpj_situacao_mock.csv` (situação cadastral) e `resultado_esperado_100k.json` (o estoque de 100 mil linhas avaliado como lote, ou seja, o gabarito). A engenharia reversa do gabarito mostrou três regras diferentes das que o plano supunha. O motor foi ajustado:
+
+1. **Data-base por nota** = `DATA_AQUISICAO`. A data-base do lote só vale quando a coluna vem vazia.
+2. **Concentração estática e por fundo.**
+   - A carteira de cada fundo é o estoque do fundo, sem as notas que vieram no lote, mais as notas do lote que passaram nas outras regras.
+   - Se o grupo passa do limite, todas as notas dele no lote são recusadas.
+   - Com o estoque como lote, isso é exatamente a conta do gabarito. Num lote pequeno, o estoque continua sendo a base.
+3. **Duplicidade.**
+   - Na simulação, vale contra cessões confirmadas pelo portal e dentro do arquivo.
+   - Na cessão, nota que já está no estoque fica de fora (`ON CONFLICT`). A mesma nota continua nunca sendo vendida duas vezes.
+
+**Situação cadastral:** são duas checagens. Primeiro o DV do CNPJ (`CNPJ_SACADO_VALIDO`); depois a situação no CSV oficial. CNPJ ausente do CSV conta como `ATIVA`.
+
+**Resultado:** 97.460 linhas idênticas ao gabarito e 3.094 que diferem só na situação, porque o gabarito usou outra fonte de situação que o CSV publicado. Nenhuma diferença em outra regra. Os testes `backend/test/gabarito` e `TestGabaritoPelaAPI` garantem isso.

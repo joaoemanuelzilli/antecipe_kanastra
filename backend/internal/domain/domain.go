@@ -69,7 +69,21 @@ type Vendida struct {
 	ValorCentavos int64
 }
 
-// EstoqueFundo soma o estoque do fundo das regras, por documento normalizado.
+// ItemEstoque é uma nota da carteira (estoque), com o que a concentração precisa.
+type ItemEstoque struct {
+	FundoDoc, SacadoDoc, CedenteDoc string // normalizados
+	ValorCentavos                   int64
+}
+
+// ContextoEstoque é o que o motor precisa saber do estoque:
+// Vendidas = notas vendidas pelo portal (cessões); Estoques = carteira de cada fundo; Itens = notas da carteira por chave.
+type ContextoEstoque struct {
+	Vendidas map[string]Vendida
+	Estoques map[string]EstoqueFundo // chave: CNPJ normalizado do fundo
+	Itens    map[string]ItemEstoque
+}
+
+// EstoqueFundo soma a carteira de um fundo, por documento normalizado.
 type EstoqueFundo struct {
 	TotalCentavos int64
 	PorSacado     map[string]int64

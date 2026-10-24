@@ -23,6 +23,7 @@ type Item struct {
 	Nota       *domain.Nota
 	Dias       int
 	SacadoNorm string
+	DataBase   time.Time // data-base da nota (a aquisição, se houver); zero = a do contexto
 }
 
 // Func avalia uma regra. err indica parâmetro inválido (erro de configuração, não recusa).
@@ -98,10 +99,14 @@ func valorMinimo(it Item, p rules.Parametros, _ Ctx) (bool, map[string]any, erro
 }
 
 func naoVencida(it Item, _ rules.Parametros, c Ctx) (bool, map[string]any, error) {
-	if it.Nota.Vencimento.After(c.DataBase) {
+	base := c.DataBase
+	if !it.DataBase.IsZero() {
+		base = it.DataBase
+	}
+	if it.Nota.Vencimento.After(base) {
 		return true, nil, nil
 	}
-	return false, map[string]any{"vencimento": it.Nota.Vencimento.Format(iso), "data_base": c.DataBase.Format(iso)}, nil
+	return false, map[string]any{"vencimento": it.Nota.Vencimento.Format(iso), "data_base": base.Format(iso)}, nil
 }
 
 func prazoMaximo(it Item, p rules.Parametros, _ Ctx) (bool, map[string]any, error) {

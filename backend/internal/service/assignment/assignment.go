@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"antecipe/internal/domain"
+	"antecipe/internal/platform/document"
 	"antecipe/internal/platform/observability"
 	"antecipe/internal/service/engine"
 	"antecipe/internal/service/message"
@@ -50,7 +51,11 @@ func (s *Servico) Ceder(ctx context.Context, loteID, chave string) (domain.Cessa
 			aprovadas[i].Recusas = nil
 			cands[i] = &aprovadas[i]
 		}
-		engine.Concentrar(cands, v.Regras, est)
+		fundo := document.Normalizar(v.Regras.Fundo.CNPJ)
+		for _, c := range cands {
+			c.Nota.DocFundo = fundo // a cessão vende ao fundo das regras
+		}
+		engine.Concentrar(cands, v.Regras, map[string]domain.EstoqueFundo{fundo: est}, fundo)
 		var fora []domain.Excluida
 		for _, rs := range cands {
 			if len(rs.Recusas) > 0 {

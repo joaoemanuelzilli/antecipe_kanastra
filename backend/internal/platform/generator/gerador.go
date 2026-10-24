@@ -32,7 +32,8 @@ const (
 	nomeConcentrado = "SERRALHERIA VIOLETA S.A."
 )
 
-var situacoesMock = []string{"11.122.233/0001-83", "22.233.344/0001-83", "33.344.455/0001-83"}
+// CNPJs que o data/cnpj_situacao_mock.csv oficial marca como INAPTA, BAIXADA e SUSPENSA.
+var situacoesMock = []string{"03.638.251/0001-94", "30.897.628/0001-00", "15.507.023/0001-64"}
 
 type parte struct{ nome, doc string }
 
@@ -119,7 +120,7 @@ func Exemplo(w io.Writer, dataBase time.Time, estoque []domain.Nota) error {
 		return strings.Join([]string{fundo, fundoDoc, ced.nome, ced.doc, sac.nome, sac.doc, numero, tipo, valor, venc, ""}, ";")
 	}
 	cnpj := func(i int) string { return document.Formatar(document.ComDV(fmt.Sprintf("5%07d0001", i))) }
-	aurora := parte{"LOJA AURORA LTDA", "55.566.677/0001-83"}
+	aurora := parte{"LOJA AURORA LTDA", cnpj(17)}
 	linhaAurora := l(aurora, "900001", "Duplicata", "10.000,00", d(30))
 
 	linhas := []string{
@@ -134,11 +135,11 @@ func Exemplo(w io.Writer, dataBase time.Time, estoque []domain.Nota) error {
 		l(parte{"ÓTICA VISÃO LTDA", cnpj(8)}, "900009", "Duplicata", "6.120,00", d(150)),
 		l(parte{"PET SHOP AMIGO LTDA", cnpj(9)}, "900010", "Duplicata", "540,00", d(10)),
 		l(parte{"LIVRARIA SABER LTDA", cnpj(10)}, "900011", "Duplicata de Serviço", "12.400,00", d(180)),
-		l(parte{"MÓVEIS PRIMAVERA LTDA", "66.677.788/0001-83"}, "900012", "Duplicata", "8.000,00", d(100)),
+		l(parte{"MÓVEIS PRIMAVERA LTDA", cnpj(16)}, "900012", "Duplicata", "8.000,00", d(100)),
 		// uma recusa de cada tipo
 		l(parte{"COMERCIAL ALFA LTDA", cnpjInvalido}, "900013", "Duplicata", "3.000,00", d(40)),
-		l(parte{"DISTRIBUIDORA BETA LTDA", "11.122.233/0001-83"}, "900014", "Duplicata", "3.000,00", d(40)),
-		l(parte{"ATACADO GAMA LTDA", "22.233.344/0001-83"}, "900015", "Duplicata", "2.000,00", d(35)),
+		l(parte{"DISTRIBUIDORA BETA LTDA", situacoesMock[0]}, "900014", "Duplicata", "3.000,00", d(40)),
+		l(parte{"ATACADO GAMA LTDA", situacoesMock[1]}, "900015", "Duplicata", "2.000,00", d(35)),
 		l(parte{"CONFECÇÕES DELTA LTDA", cnpj(11)}, "900016", "Cheque", "2.500,00", d(30)),
 		l(parte{"BAZAR ÉPSILON LTDA", cnpj(12)}, "900017", "Duplicata", "80,00", d(30)),
 		l(parte{"LANCHONETE ZETA LTDA", cnpj(13)}, "900018", "Duplicata", "1.900,00", d(-10)),
@@ -159,11 +160,12 @@ func Exemplo(w io.Writer, dataBase time.Time, estoque []domain.Nota) error {
 	return bw.Flush()
 }
 
-// notaVendavel escolhe uma nota do ANTECIPE no estoque que, fora a duplicidade, seria aprovada.
-func notaVendavel(estoque []domain.Nota, dataBase time.Time) *domain.Nota {
+// notaVendavel escolhe uma nota do ANTECIPE no estoque que passa nas regras: na simulação ela é aprovada,
+// mas na cessão fica de fora, porque já está na carteira (não se vende a mesma nota duas vezes).
+func notaVendavel(estoque []domain.Nota, _ time.Time) *domain.Nota {
 	for i := range estoque {
 		n := &estoque[i]
-		dias := n.Vencimento.Sub(dataBase).Hours() / 24
+		dias := n.Vencimento.Sub(n.Aquisicao).Hours() / 24
 		if n.ErroFormato == nil && document.Normalizar(n.DocFundo) == "92234400000180" &&
 			dias >= 30 && dias <= 90 && n.ValorCentavos >= 100_000 && document.Raiz(document.Normalizar(n.DocSacado)) != "58206002" {
 			return n
