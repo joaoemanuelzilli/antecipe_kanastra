@@ -496,3 +496,24 @@ Meus lotes: cards e Novo envio compartilhados com a Dashboard; busca, situação
 
 **O que o time fez com a resposta:** _(preencher)_
 
+---
+
+## #19 · 24/10/2026 · Novo cnpj_situacao_mock.csv no Notion
+
+**Prompt (time → Claude Code):**
+
+> colocaram um novo csv chamado cnpj_situacao_mock.csv no final da pagina testa ai
+
+**O que a IA fez:**
+
+1. **Baixou o CSV novo** do fim da página do Notion: 4.360 CNPJs, 89 não-ATIVA, cobrindo os 4.209 sacados do estoque. Antes eram 3.041 CNPJs e 42 não-ATIVA.
+2. **Rodou o modelo de regras com ele:** 100.554 de 100.554 linhas iguais ao gabarito (com CNPJ ausente valendo como ATIVA ou como recusado, porque nenhum sacado ficou de fora).
+3. **Trocou `data/cnpj_situacao_mock.csv` e ajustou o que dependia dele:** os CNPJs não-ATIVA do gerador e do exemplo (os antigos viraram ATIVA), os testes de contagem e os testes de gabarito, que agora exigem 100%.
+4. **Verificou:**
+   - suíte inteira verde (17 pacotes);
+   - no Docker com banco novo, enviando o arquivo de 100 mil pelo front, a comparação só com SQL deu 100.554 idênticas, com 85.215 aprovadas e 15.339 barradas, igual ao gabarito;
+   - o lote de 1 milhão deu 1.005.540 de 1.005.540 iguais, em 13,7 s.
+5. Atualizou README, relatório e plano.
+
+**O que o time fez com a resposta:** _(preencher)_
+

@@ -82,7 +82,7 @@ func TestSemente(t *testing.T) {
 	if n := contar(t, r, "estoque"); n != 100554 {
 		t.Fatalf("estoque = %d", n)
 	}
-	if n := contar(t, r, "situacao_cadastral"); n != 3041 {
+	if n := contar(t, r, "situacao_cadastral"); n != 4360 {
 		t.Fatalf("situações = %d", n)
 	}
 	v, err := r.Publicadas(ctx)
@@ -129,7 +129,7 @@ func TestContextoMotor(t *testing.T) {
 		t.Fatalf("concentração = %.3f", pct)
 	}
 	sit, err := r.Situacoes(ctx)
-	if err != nil || sit["03638251000194"] != "INAPTA" || len(sit) != 3041 {
+	if err != nil || sit["08356446000165"] != "INAPTA" || len(sit) != 4360 {
 		t.Fatalf("situações = %d, %v", len(sit), err)
 	}
 }

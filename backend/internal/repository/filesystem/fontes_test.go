@@ -60,11 +60,11 @@ func TestLerSituacoes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(m) != 3041 || m["03638251000194"] != "INAPTA" || m["30897628000100"] != "BAIXADA" || m["15507023000164"] != "SUSPENSA" {
+	if len(m) != 4360 || m["08356446000165"] != "INAPTA" || m["09362675000236"] != "BAIXADA" || m["03601302000103"] != "SUSPENSA" {
 		t.Fatalf("situações = %d", len(m))
 	}
 	f := SituacaoCom(m, "ATIVA")
-	if f("03638251000194") != "INAPTA" || f("99999999000199") != "ATIVA" {
+	if f("08356446000165") != "INAPTA" || f("99999999000199") != "ATIVA" {
 		t.Fatal("SituacaoCom não aplica o padrão")
 	}
 }

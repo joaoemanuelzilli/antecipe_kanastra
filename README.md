@@ -79,7 +79,7 @@ Outros comandos (`make` sozinho lista todos):
   - gere com `scripts/lote-ampliado.sh > amostras/lote_1m.csv`: são 10 cópias do estoque, e nas cópias 2 a 10 o número da nota ganha `-C1` a `-C9`;
   - a concentração por fundo não muda, então cada linha tem a resposta do gabarito para a linha original;
   - depois de processar, baixe o `resultado.json` e confira com `python3 scripts/comparar-gabarito.py resultado.json`;
-  - resultado medido: 974.600 linhas iguais ao gabarito, 30.940 diferentes só na situação cadastral e 0 em outras regras.
+  - resultado medido: 1.005.540 de 1.005.540 linhas iguais ao gabarito.
 - `make gerar N=500000`: lote grande com mistura realista, determinístico pela semente:
   - ~80% aprováveis;
   - casos de cada regra;
@@ -87,21 +87,12 @@ Outros comandos (`make` sozinho lista todos):
 
 ### Conferência com o gabarito oficial
 
-O Notion publicou o `resultado_esperado_100k.json` (o estoque avaliado como lote). O teste `backend/test/gabarito` e o ponta a ponta `TestGabaritoPelaAPI` comparam o nosso resultado com ele, linha a linha:
+O Notion publicou o `resultado_esperado_100k.json` (o estoque avaliado como lote) e o `cnpj_situacao_mock.csv` (versão final, no fim da página). O teste `backend/test/gabarito` e o ponta a ponta `TestGabaritoPelaAPI` comparam o nosso resultado com o gabarito, linha a linha, e exigem igualdade total:
 
 | | Linhas |
 |---|---|
-| Idênticas ao gabarito (status e motivos, na mesma ordem) | **97.460** |
-| Diferem **só** na situação cadastral | 3.094 |
-| Diferem em qualquer outra regra | **0** |
-
-A situação cadastral vem do `data/cnpj_situacao_mock.csv` publicado no Notion. O gabarito foi gerado com outra fonte de situação:
-- ele barra 87 sacados que o CSV diz estarem `ATIVA` ou que nem estão no CSV;
-- ele aprova 42 sacados que o CSV marca como `INAPTA`, `SUSPENSA` ou `BAIXADA`.
-
-Com a situação do próprio gabarito, o nosso motor reproduz o resultado esperado sem nenhuma diferença.
-
-> As cessões confirmadas entram na carteira do fundo e mudam a concentração. Para reproduzir o gabarito depois de vender notas (por exemplo, depois do `make demo-concorrencia`), rode `make limpar && make up` para voltar a um banco novo.
+| Idênticas ao gabarito (status e motivos, na mesma ordem) | **100.554 de 100.554 (100%)** |
+| Lote de 1 milhão (`scripts/lote-ampliado.sh`) | **1.005.540 de 1.005.540 (100%)**, em 13,7 s |
 
 **Conferência só com SQL, no banco:** a view `resultado_gabarito` devolve cada nota no formato do gabarito.
 
@@ -109,12 +100,7 @@ Com a situação do próprio gabarito, o nosso motor reproduz o resultado espera
 SELECT linha, id, status, barrado_por FROM resultado_gabarito WHERE lote_id = '<lote_id>' ORDER BY linha;
 ```
 
-`make conferir-gabarito LOTE=<lote_id>` carrega o gabarito no Postgres e cruza com a view. Resultado medido com banco novo:
-- 100.554 linhas;
-- 97.460 idênticas;
-- 3.094 diferentes só na situação cadastral;
-- 0 diferenças em outras regras;
-- aprovadas: 86.713 no banco contra 85.215 no gabarito. A diferença vem toda da situação cadastral.
+`make conferir-gabarito LOTE=<lote_id>` carrega o gabarito no Postgres e cruza com a view. Resultado medido com banco novo: **100.554 linhas idênticas**, com 85.215 aprovadas e 15.339 barradas, exatamente como no gabarito.
 
 Também dá para conferir pela linha de comando:
 
@@ -283,7 +269,7 @@ As regras são lidas da **versão publicada** (a versão 1 vem de `data/validado
 | Código | Regra |
 |---|---|
 | `CNPJ_SACADO_VALIDO` | Dígitos verificadores, inclusive do **CNPJ alfanumérico** (desde jul/2026) |
-| `SITUACAO_CADASTRAL_SACADO` | Duas checagens: primeiro o `CNPJ_SACADO_VALIDO` confere se o CNPJ existe de fato (DV); depois a situação vem do `data/cnpj_situacao_mock.csv` oficial e tem que estar nas `situacoes_aceitas`. CNPJ fora do CSV = `ATIVA` (configurável no YAML), como no gabarito |
+| `SITUACAO_CADASTRAL_SACADO` | Duas checagens: primeiro o `CNPJ_SACADO_VALIDO` confere se o CNPJ existe de fato (DV); depois a situação vem do `data/cnpj_situacao_mock.csv` oficial e tem que estar nas `situacoes_aceitas`. O CSV final cobre todos os 4.209 sacados do estoque. CNPJ fora dele = `ATIVA` (configurável no YAML) |
 | `TIPO_RECEBIVEL` | Tipos aceitos (sem diferenciar acento nem maiúsculas) |
 | `VALOR_MINIMO` | Valor ≥ mínimo |
 | `NAO_VENCIDA` | Vencimento depois da **data-base da nota**: a `DATA_AQUISICAO` dela. Sem essa coluna, vale a data-base do lote (padrão 22/10/2026). |

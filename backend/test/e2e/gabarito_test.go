@@ -102,8 +102,8 @@ func TestGabaritoPelaAPI(t *testing.T) {
 		}
 	}
 	t.Logf("pela API: %d iguais ao gabarito, %d diferem só na situação cadastral, %d outras", iguais, situacao, outras)
-	if outras > 0 || iguais < 97000 {
-		t.Fatalf("divergências fora da situação cadastral: %d (iguais %d)", outras, iguais)
+	if iguais != len(esp) {
+		t.Fatalf("esperava 100%% igual ao gabarito: %d de %d (situação %d, outras %d)", iguais, len(esp), situacao, outras)
 	}
 }
 

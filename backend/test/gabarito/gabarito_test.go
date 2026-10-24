@@ -87,7 +87,7 @@ func TestGabarito100k(t *testing.T) {
 		}
 	}
 	t.Logf("iguais ao gabarito: %d · só a situação cadastral difere: %d · outras diferenças: %d", iguais, difSituacao, outras)
-	if outras > 0 {
-		t.Fatalf("%d linhas diferem do gabarito em regras que não são a situação cadastral", outras)
+	if iguais != len(esp) {
+		t.Fatalf("esperava 100%% igual ao gabarito: %d de %d (situação %d, outras %d)", iguais, len(esp), difSituacao, outras)
 	}
 }

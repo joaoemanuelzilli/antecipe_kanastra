@@ -52,15 +52,13 @@ Go 1.27 (arquitetura hexagonal), PostgreSQL 18, OpenTelemetry (Jaeger + métrica
 
 ## Conferência com o gabarito oficial
 
-O estoque de 100 mil linhas enviado como lote bate com o `resultado_esperado_100k.json` publicado pelos organizadores:
-- **97.460 linhas idênticas**, com o mesmo status e os mesmos motivos na mesma ordem;
-- **3.094 linhas diferem só na situação cadastral**. O gabarito usou outra fonte de situação que o `cnpj_situacao_mock.csv` publicado: com a situação do próprio gabarito, a diferença é zero;
-- **nenhuma diferença em qualquer outra regra.**
+O estoque de 100 mil linhas enviado como lote bate **100%** com o `resultado_esperado_100k.json` publicado pelos organizadores: 100.554 de 100.554 linhas com o mesmo status e os mesmos motivos, na mesma ordem. A conferência foi feita pela API e só com SQL no banco (view `resultado_gabarito`). O lote ampliado de 1 milhão de linhas também bate 100%.
 
-Para bater com o gabarito:
+Para chegar lá:
 - a data-base de cada nota é a `DATA_AQUISICAO` dela;
 - a concentração é estática e por fundo;
-- a duplicidade na simulação vale contra as cessões confirmadas, e a cessão bloqueia qualquer nota que já está no estoque.
+- a duplicidade na simulação vale contra as cessões confirmadas, e a cessão bloqueia qualquer nota que já está no estoque;
+- a situação cadastral vem do `cnpj_situacao_mock.csv` final publicado no Notion.
 
 ## Resultados
 

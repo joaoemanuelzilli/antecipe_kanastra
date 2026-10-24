@@ -33,7 +33,7 @@ const (
 )
 
 // CNPJs que o data/cnpj_situacao_mock.csv oficial marca como INAPTA, BAIXADA e SUSPENSA.
-var situacoesMock = []string{"03.638.251/0001-94", "30.897.628/0001-00", "15.507.023/0001-64"}
+var situacoesMock = []string{"08.356.446/0001-65", "09.362.675/0002-36", "03.601.302/0001-03"}
 
 type parte struct{ nome, doc string }
 

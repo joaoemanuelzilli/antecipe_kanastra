@@ -481,4 +481,4 @@ O Notion publicou mais dois arquivos: `cnpj_situacao_mock.csv` (situação cadas
 
 **Situação cadastral:** são duas checagens. Primeiro o DV do CNPJ (`CNPJ_SACADO_VALIDO`); depois a situação no CSV oficial. CNPJ ausente do CSV conta como `ATIVA`.
 
-**Resultado:** 97.460 linhas idênticas ao gabarito e 3.094 que diferem só na situação, porque o gabarito usou outra fonte de situação que o CSV publicado. Nenhuma diferença em outra regra. Os testes `backend/test/gabarito` e `TestGabaritoPelaAPI` garantem isso.
+**Resultado (com o `cnpj_situacao_mock.csv` final, republicado no fim da página do Notion):** 100.554 de 100.554 linhas idênticas ao gabarito, também na conferência só com SQL, e 1.005.540 de 1.005.540 no lote ampliado de 1 milhão. A primeira versão do CSV divergia do gabarito em 3.094 linhas. Os testes `backend/test/gabarito` e `TestGabaritoPelaAPI` exigem 100%.
