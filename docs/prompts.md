@@ -237,3 +237,17 @@ Depois disso, a IA seguiu o plano até a Tarefa 13 (12:15):
 
 **O que o time fez com a resposta:** _(preencher)_
 
+---
+
+## #9 · 24/10/2026 ~12:30 · Git pull e CSV oficial de situação cadastral
+
+**Prompt (time → Claude Code):**
+
+> git pull no repo
+>
+> verifique novamente o notion q eles subiram um csv para fazer a verificação do cnpj, atente-se que são dois tipos de verificação, o primeiro pra ver se de fato é um cnpj válido, e depois vc verifica nesse csv a situação do cnpj para adequar-se nas regras padrões do fundo
+
+**O que a IA fez:** _(em andamento)_
+
+**O que o time fez com a resposta:** _(preencher)_
+
