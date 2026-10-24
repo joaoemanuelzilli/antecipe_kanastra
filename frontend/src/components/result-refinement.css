@@ -36,3 +36,13 @@
 .sheet-body .note-help-button>span{flex:1;font-size:14px;line-height:1.6;font-weight:500}
 .sheet-body .note-help-button:hover{background:#dff4e8;border-color:#b3d9c2}
 @media(max-width:420px){.sheet-body .note-help-button{padding:12px;gap:10px}.sheet-body .note-help-button>span{font-size:13px}.sheet-body .reason-heading{padding:18px 18px 0}.sheet-body .reason-card .reason-explanation{padding:12px 18px 18px}.sheet-body .reason-card .next-action{padding:18px}}
+
+.result-page .refusal-summary{width:100%;max-width:none;margin:0 0 24px;padding:0;border:1px solid #e1e8e3;border-radius:20px;background:#fff;overflow:hidden}
+.result-page .refusal-summary>summary{padding:16px 20px;min-height:56px;font-size:14px;color:#234734;justify-content:space-between}
+.result-page .refusal-summary[open]>summary{border-bottom:1px solid #edf1ee}
+.result-page .refusal-summary>ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px;padding:8px 20px;margin:0;max-width:none;width:100%;list-style:none}
+.result-page .refusal-summary li{display:block;padding:0;border:0;min-width:0}
+.result-page .refusal-summary li button{display:flex;align-items:center;gap:12px;text-align:left;width:100%;min-height:54px;padding:12px 8px;background:transparent;border:0;border-bottom:1px solid #edf1ee;color:#334e3e;font-size:13px;line-height:1.5;border-radius:0}
+.result-page .refusal-summary li button>span{flex:1;min-width:0}.result-page .refusal-summary li button>strong{font-size:12px;font-weight:500;white-space:nowrap;color:#7e3940}
+.result-page .refusal-summary li button:hover,.result-page .refusal-summary li button.selected{background:#eef8f2;color:#004639;border-radius:10px}.result-page .refusal-summary>p{padding:10px 28px 16px;margin:0;font-size:11px;color:#5e6b62}
+@media(max-width:700px){.result-page .refusal-summary>ul{grid-template-columns:1fr;padding-inline:12px}.result-page .refusal-summary>summary{padding-inline:16px}.result-page .refusal-summary>p{padding-inline:20px}}
