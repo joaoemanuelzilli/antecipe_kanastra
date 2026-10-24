@@ -386,3 +386,26 @@ Pendências para quem continuar:
 
 **O que o time fez com a resposta:** _(preencher)_
 
+
+
+---
+
+## Frontend · 24/10/2026 · Interface React e Figma
+
+Contribuição desenvolvida no Codex por Mateus. O pedido, os esclarecimentos, as delegações e a validação estão registrados em [prompts-frontend.md](../frontend/docs/prompts-frontend.md). A interface foi adaptada ao contrato v1.1 com mocks explícitos, pois a API Go ainda está em desenvolvimento.
+
+**O que o time fez com a resposta:** _(preencher após incorporar e validar contra o Go)_
+
+A contribuição também incorpora os frames de login e dashboard desenhados pelo time no Figma; o login é uma entrada fictícia exclusiva do modo demo. Histórico e validação atualizados no registro do frontend.
+
+Atualização Novo lote (Figma1:1365): modal com nome/data/CSV e instruções expansíveis, estado vazio do dashboard e mocks em página. Nome permanece como metadado local; contrato multipart inalterado. Validação atual:40testes e fluxos de UI.
+
+Vídeo de ajuda: mascote animado fornecido pelo usuário, otimizado para web e integrado ao botão existente; reprodução sem áudio e respeito a movimento reduzido.
+
+Loading do documento (Figma1:1631): vídeo local otimizado, progresso real e contador, modal até conclusão, acompanhamento reaberto pelo histórico e exemplo mock com simulação perceptível. Registro e42testes em frontend/docs/prompts-frontend.md.
+
+Grade única: máximo1280px e margens responsivas64/40/20, compartilhados por Dashboard, Meus lotes, Resultado e elementos do shell. Validação visual e medidas registradas em frontend/docs/integracao.md.
+
+Cabeçalho padrão: título/descrição e seletor da Dashboard compartilhados por todas as páginas do portal, inclusive estados de carregamento/erro. Ações e contexto ficam abaixo; padding superior64/48/36px. Conferidos desktop/celular, acesso/editor do gestor e modal de envio; lint/build aprovados. Registro em frontend/docs/prompts-frontend.md.
+
+Meus lotes: cards e Novo envio compartilhados com a Dashboard; busca, situação, data-base e ordenação com inputs do login Figma.53testes, lint/build e fluxos desktop/celular conferidos. Detalhes em frontend/docs/prompts-frontend.md.

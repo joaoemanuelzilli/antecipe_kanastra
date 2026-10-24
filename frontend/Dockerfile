@@ -1,10 +1,15 @@
-# Provisório: serve uma página de espera e repassa /api para a API.
-# Vai ser trocado pelo build do app React (node → nginx) na integração.
+FROM node:24-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
 FROM nginx:1.27-alpine
-# o nginx oficial aplica envsubst nos templates na subida (só nas variáveis definidas, como AI_SECURITY_KEY)
 COPY templates/ /etc/nginx/templates/
-# padrões do compose; na Railway, troque por <serviço>.railway.internal:<porta>
 ENV API_UPSTREAM=api:8080 \
     AI_UPSTREAM=ai:7777 \
     NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
-COPY public/ /usr/share/nginx/html/
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=3s CMD wget -q -O /dev/null http://127.0.0.1/ || exit 1

@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!frontend/.env.demo
 
 # Lotes gerados para teste de carga (100k a 500k linhas)
 amostras/
