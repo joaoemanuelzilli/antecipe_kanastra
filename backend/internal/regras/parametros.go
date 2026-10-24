@@ -36,6 +36,9 @@ func (p Parametros) Decimal(nome string) (decimal.Decimal, error) {
 		return decimal.Decimal{}, err
 	}
 	s := string(bytes.TrimSpace(raw))
+	if len(s) > tamanhoMaximoNumero {
+		return decimal.Decimal{}, fmt.Errorf("parâmetro %s fora do intervalo aceito", nome)
+	}
 	if _, err := strconv.ParseFloat(s, 64); err != nil {
 		return decimal.Decimal{}, fmt.Errorf("parâmetro %s deve ser número", nome)
 	}
@@ -43,8 +46,19 @@ func (p Parametros) Decimal(nome string) (decimal.Decimal, error) {
 	if err != nil {
 		return decimal.Decimal{}, fmt.Errorf("parâmetro %s deve ser número", nome)
 	}
+	// Limita magnitude e casas decimais: evita estouro na conversão para int e contas com expoentes gigantes.
+	if d.Abs().GreaterThan(limiteNumero) || d.Exponent() < -casasMaximas {
+		return decimal.Decimal{}, fmt.Errorf("parâmetro %s fora do intervalo aceito", nome)
+	}
 	return d, nil
 }
+
+const (
+	tamanhoMaximoNumero = 24
+	casasMaximas        = 12
+)
+
+var limiteNumero = decimal.New(1, 12) // 10^12
 
 // ListaTexto lê uma lista de textos.
 func (p Parametros) ListaTexto(nome string) ([]string, error) {

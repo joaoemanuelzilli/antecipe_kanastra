@@ -171,3 +171,19 @@ func TestCatalogo(t *testing.T) {
 		t.Fatal("catálogo de precificação deve ter taxa e base")
 	}
 }
+
+func TestParametroNumeroExtremo(t *testing.T) {
+	for _, v := range []string{`1e300`, `-1e300`, `1e-300`, `12345678901234567890123456789012345`, `9223372036854775808`} {
+		p := Parametros{"x": json.RawMessage(v)}
+		if _, err := p.Inteiro("x"); err == nil {
+			t.Errorf("Inteiro(%s) deveria falhar", v)
+		}
+		if _, err := p.Decimal("x"); err == nil {
+			t.Errorf("Decimal(%s) deveria falhar", v)
+		}
+	}
+	p := Parametros{"x": json.RawMessage(`3650`)}
+	if n, err := p.Inteiro("x"); err != nil || n != 3650 {
+		t.Fatalf("3650 = %d, %v", n, err)
+	}
+}
