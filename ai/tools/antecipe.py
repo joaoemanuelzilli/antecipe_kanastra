@@ -135,7 +135,8 @@ class AntecipeTools(Toolkit):
         Args:
             busca: número da nota, nome ou CNPJ do cliente (sacado) ou da empresa (cedente). Vazio = todas.
             status: "aprovada" ou "recusada". Vazio = as duas.
-            motivo: código do motivo principal da recusa, ex.: PRAZO_MAXIMO, DUPLICIDADE, CONCENTRACAO_MAXIMA_SACADO.
+            motivo: código do motivo principal da recusa (o `codigo_interno` de consultar_lote ou consultar_regras),
+                ex.: PRAZO_MAXIMO, DUPLICIDADE, CONCENTRACAO_MAXIMA_SACADO. Só para o filtro: não mostre ao usuário.
             pagina: página do resultado (10 notas por página), começando em 1.
             lote_id: id do lote (UUID). Deixe vazio para usar o lote aberto na tela do usuário.
         """
@@ -233,7 +234,7 @@ def resumo_do_lote(lote: dict[str, Any]) -> dict[str, Any]:
         }
     out["motivos_de_recusa"] = [
         {
-            "codigo": m.get("codigo"),
+            "codigo_interno": m.get("codigo"),
             "titulo": m.get("titulo"),
             "quantidade": m.get("quantidade"),
             "o_que_fazer": m.get("acao"),
@@ -287,10 +288,9 @@ def resumo_das_notas(pagina: dict[str, Any]) -> dict[str, Any]:
             if n.get("calculo"):
                 item["calculo"] = n["calculo"].get("texto")
         else:
-            # Só os textos oficiais; os "dados" técnicos ficam de fora (a primeira recusa é a principal).
+            # Só os textos oficiais; o código e os "dados" técnicos ficam de fora (a primeira recusa é a principal).
             item["recusas"] = [
                 {
-                    "codigo": r.get("codigo"),
                     "titulo": r.get("titulo"),
                     "mensagem": r.get("mensagem"),
                     "o_que_fazer": r.get("acao"),
@@ -323,7 +323,7 @@ def resumo_das_regras(r: dict[str, Any]) -> dict[str, Any]:
         "preco": (r.get("precificacao_efetiva") or {}).get("descricao"),
         "regras": [
             {
-                "codigo": v.get("codigo"),
+                "codigo_interno": v.get("codigo"),
                 "regra": titulos.get(v.get("codigo"), v.get("codigo")),
                 "ativa": v.get("ativo"),
                 "parametros": v.get("parametros") or {},

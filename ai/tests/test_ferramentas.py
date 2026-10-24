@@ -196,7 +196,6 @@ async def test_buscar_notas_repassa_filtros_e_explica_recusas():
     }
     recusada, aprovada = out["notas"]
     assert recusada["recusas"][0] == {
-        "codigo": "PRAZO_MAXIMO",
         "titulo": "Prazo acima do limite",
         "mensagem": "Esta nota vence em 240 dias e o fundo compra notas com até 180 dias.",
         "o_que_fazer": "Você pode antecipá-la a partir de 21/12/2026.",
@@ -230,7 +229,7 @@ async def test_consultar_regras_usa_titulos_do_catalogo():
     }
     out = json.loads(await ferramentas(FakeAPI({"/api/regras": (200, regras)})).consultar_regras())
     assert out["regras"] == [
-        {"codigo": "PRAZO_MAXIMO", "regra": "Prazo máximo", "ativa": True, "parametros": {"prazo_maximo_dias": 120}}
+        {"codigo_interno": "PRAZO_MAXIMO", "regra": "Prazo máximo", "ativa": True, "parametros": {"prazo_maximo_dias": 120}}
     ]
     assert out["publicada_em"] == "24/10/2026 15:10"
 
