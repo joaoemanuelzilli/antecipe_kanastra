@@ -10,7 +10,7 @@ mkdir -p amostras
 printf "\n%-10s %-10s %-12s %-12s %-12s\n" "linhas" "MB" "duração" "aprovadas" "recusadas"
 for n in $TAMANHOS; do
   arq="amostras/lote_$n.csv"
-  [ -s "$arq" ] || $GERAR --linhas "$n" --semente "$n" --estoque data/estoque_antecipe.zip > "$arq"
+  [ -s "$arq" ] || $GERAR --linhas "$n" --semente "$n" --estoque data/estoque_antecipe.zip > "$arq" 2>/dev/null
   id=$(curl -fsS -F "arquivo=@$arq" "$API/api/lotes" | grep -o '"lote_id":"[^"]*"' | cut -d'"' -f4)
   until json=$(curl -fsS "$API/api/lotes/$id") && echo "$json" | grep -qE '"status":"(concluido|erro)"'; do sleep 0.3; done
   ms=$(echo "$json" | grep -o '"duracao_ms":[0-9]*' | cut -d: -f2)

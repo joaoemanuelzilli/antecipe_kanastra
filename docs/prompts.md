@@ -207,3 +207,15 @@ Depois disso, a IA seguiu o plano até a Tarefa 13 (12:15):
 
 **O que foi feito com a resposta:** _(preencher após a revisão)_
 
+---
+
+## #8 · 24/10/2026 ~12:15 · Docker liberado
+
+**Prompt (time → Claude Code):**
+
+> rodei esses comandos q vc pediu do sudo
+
+**O que a IA fez:** passou a validar o `make up` com Docker (build das imagens, subida de Postgres, API, Jaeger e front, semente do estoque) e depois o caminho completo num clone limpo do repositório, como o jurado faria.
+
+**O que o time fez com a resposta:** _(preencher)_
+
