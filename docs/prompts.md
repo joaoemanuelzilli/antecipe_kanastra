@@ -304,3 +304,32 @@ A correção 3 (separar as conversas por usuário) não foi aplicada, porque nã
 
 **O que o time fez com a resposta:** _(preencher)_
 
+---
+
+## #11 · 24/10/2026 ~14:25 · Deploy na Railway por imagens Docker
+
+**Prompt (time → Claude Code):**
+
+> Como conseguimos subir as docker image para realizarmos o deploy pela railway puxando delas, pq o github está desativado temporariamente na railway
+
+**O que a IA fez:**
+
+1. **Consultou a documentação da Railway** por um subagente (web-fetch), que leu as páginas de serviços, private networking, variáveis e domínios. Pontos que importam:
+   - deploy a partir de imagem pública (Docker Hub ou GHCR);
+   - registry privado só no plano Pro;
+   - endereço interno `<serviço>.railway.internal`, dual-stack nos ambientes novos;
+   - variáveis de referência `${{Serviço.VAR}}`;
+   - porta pública detectada sozinha.
+2. **Ajustou a infraestrutura para rodar fora do compose:**
+   - o nginx passou a receber os endereços dos serviços por variável (`API_UPSTREAM`, `AI_UPSTREAM`), com padrão para o compose;
+   - o nginx passou a resolver o DNS a cada 10 s (`resolver` com `NGINX_LOCAL_RESOLVERS`), porque na Railway o IP interno muda a cada deploy;
+   - entrou o `listen [::]:80`;
+   - o assistente ganhou a variável `AI_HOST` para ambientes Railway antigos, só IPv6. Testar `::` direto quebrou o compose (o asyncio cria o socket só IPv6), então o padrão continua `0.0.0.0`.
+3. **Criou o `make publicar REGISTRO=… TAG=…`**, que monta as três imagens para `linux/amd64` e as envia.
+4. **Escreveu o `docs/deploy-railway.md`**, com os serviços e todas as variáveis, e uma alternativa sem registry via `railway up`.
+5. **Validou:**
+   - compose local: API e assistente pelo nginx, inclusive depois de reiniciar a API;
+   - build das três imagens sem enviar: nenhuma tem `.env`, e a da API leva os dados e a config.
+
+**O que o time fez com a resposta:** _(preencher)_
+

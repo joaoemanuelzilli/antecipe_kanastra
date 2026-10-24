@@ -1,5 +1,10 @@
+# Endereços dos serviços vêm do ambiente: no compose, api:8080 e ai:7777 (padrão do Dockerfile);
+# na Railway, <serviço>.railway.internal. O DNS é resolvido a cada 10 s, porque o IP interno muda a cada deploy.
+resolver ${NGINX_LOCAL_RESOLVERS} valid=10s;
+
 server {
     listen 80;
+    listen [::]:80;
     server_name _;
     root /usr/share/nginx/html;
 
@@ -7,7 +12,8 @@ server {
     client_max_body_size 300m;
 
     location /api/ {
-        proxy_pass http://api:8080;
+        set $api http://${API_UPSTREAM};
+        proxy_pass $api;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Request-Id $request_id;
@@ -21,7 +27,8 @@ server {
     # Assistente de IA. O AgentOS exige a chave (OS_SECURITY_KEY); só o nginx a conhece e a injeta,
     # e só nas duas rotas que o front usa. O resto do AgentOS (/sessions, /config, /docs…) não sai daqui.
     location = /ai/assistente/status {
-        proxy_pass http://ai:7777/assistente/status;
+        set $ai ${AI_UPSTREAM};
+        proxy_pass http://$ai/assistente/status;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Request-Id $request_id;
@@ -31,7 +38,8 @@ server {
     # POST da pergunta; sem buffer para o streaming (SSE)
     location = /ai/agents/antecipe-assistente/runs {
         limit_except POST { deny all; }
-        proxy_pass http://ai:7777/agents/antecipe-assistente/runs;
+        set $ai ${AI_UPSTREAM};
+        proxy_pass http://$ai/agents/antecipe-assistente/runs;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Request-Id $request_id;

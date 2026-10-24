@@ -51,6 +51,7 @@ Outros comandos (`make` sozinho lista todos):
 | `make carga` | Mede lotes de 100k, 250k e 500k linhas |
 | `make demo-concorrencia` | Duas cessões simultâneas com notas em comum, sem venda duplicada |
 | `make check` | Procura segredos no repositório (gitleaks) |
+| `make publicar REGISTRO=…` | Monta e envia as imagens para um registry (deploy na Railway) |
 | `make test` / `make test-integracao` | Testes de unidade / todos, inclusive banco e ponta a ponta (precisam de Go 1.27) |
 | `make test-ai` | Testes do assistente de IA (precisa do `uv`; não usa rede nem chave) |
 
@@ -294,6 +295,15 @@ Os testes ponta a ponta sobem a aplicação inteira contra um Postgres de verdad
 - logs sem dados.
 
 ---
+
+## Deploy na Railway (por imagens Docker)
+
+```bash
+docker login
+make publicar REGISTRO=docker.io/SEU_USUARIO TAG=v1   # monta e envia antecipe-api, antecipe-web e antecipe-ai
+```
+
+Depois, crie na Railway os serviços `Postgres`, `api`, `ai` e `web` a partir das imagens. O passo a passo, com todas as variáveis, está em [`docs/deploy-railway.md`](docs/deploy-railway.md). O nginx recebe os endereços internos por variável (`API_UPSTREAM`, `AI_UPSTREAM`) e resolve o DNS a cada 10 s, porque na Railway o IP interno muda a cada deploy.
 
 ## Sem Docker (alternativa)
 

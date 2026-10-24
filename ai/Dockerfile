@@ -18,4 +18,5 @@ COPY db/ db/
 RUN useradd --uid 10001 --no-create-home antecipe
 USER antecipe
 EXPOSE 7777
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7777", "--no-access-log"]
+# AI_HOST: 0.0.0.0 (padrão; compose e Railway dual-stack). Em ambiente Railway antigo, só IPv6, use AI_HOST=::
+CMD ["sh", "-c", "exec uvicorn app.main:app --host ${AI_HOST:-0.0.0.0} --port 7777 --no-access-log"]

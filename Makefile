@@ -4,7 +4,7 @@ SHELL := /bin/bash
 N ?= 500000
 SEMENTE ?= 42
 
-.PHONY: ajuda up down limpar logs logs-ai test test-ai test-integracao gerar carga check demo-concorrencia
+.PHONY: ajuda up down limpar publicar logs logs-ai test test-ai test-integracao gerar carga check demo-concorrencia
 
 ajuda: ## Mostra os comandos
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-20s %s\n", $$1, $$2}'
@@ -73,3 +73,21 @@ check: ## Procura segredos no repositório (gitleaks)
 
 demo-concorrencia: .env ## Mostra duas cessões simultâneas sem venda duplicada (precisa do make up)
 	./scripts/demo-concorrencia.sh
+
+REGISTRO ?=
+TAG ?= latest
+
+publicar: ## Monta e envia as imagens para um registry (ex.: make publicar REGISTRO=docker.io/seu-usuario TAG=v1)
+	@test -n "$(REGISTRO)" || { echo "Informe o registry: make publicar REGISTRO=docker.io/seu-usuario (ou ghcr.io/seu-usuario)"; exit 1; }
+	docker build --platform linux/amd64 -f backend/Dockerfile -t $(REGISTRO)/antecipe-api:$(TAG) .
+	docker build --platform linux/amd64 -t $(REGISTRO)/antecipe-web:$(TAG) ./frontend
+	docker build --platform linux/amd64 -t $(REGISTRO)/antecipe-ai:$(TAG) ./ai
+	docker push $(REGISTRO)/antecipe-api:$(TAG)
+	docker push $(REGISTRO)/antecipe-web:$(TAG)
+	docker push $(REGISTRO)/antecipe-ai:$(TAG)
+	@echo ""
+	@echo "  Imagens publicadas:"
+	@echo "    $(REGISTRO)/antecipe-api:$(TAG)"
+	@echo "    $(REGISTRO)/antecipe-web:$(TAG)"
+	@echo "    $(REGISTRO)/antecipe-ai:$(TAG)"
+	@echo "  Passo a passo da Railway: docs/deploy-railway.md"
