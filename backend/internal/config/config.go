@@ -17,6 +17,7 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"antecipe/internal/precificacao"
+	"antecipe/internal/regras"
 )
 
 // Precificacao sobrescreve a precificação das regras publicadas. Campo nil = não sobrescreve.
@@ -132,4 +133,10 @@ func (a *Atual) Observar(ctx context.Context, intervalo time.Duration) {
 			a.log.Info("config recarregada", slog.String("metodo_preco", metodo))
 		}
 	}
+}
+
+// PrecificacaoEfetiva aplica as sobrescritas do YAML sobre a precificação das regras publicadas.
+func (c Config) PrecificacaoEfetiva(r regras.Precificacao) (precificacao.Config, []string) {
+	base := precificacao.Config{Metodo: r.Metodo, TaxaMensalPercentual: r.TaxaMensalPercentual, BaseDias: r.BaseDias}
+	return precificacao.Efetiva(base, c.Precificacao.Metodo, c.Precificacao.TaxaMensalPercentual, c.Precificacao.BaseDias)
 }

@@ -10,7 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shopspring/decimal"
+
 	"antecipe/internal/obs"
+	"antecipe/internal/regras"
 )
 
 func TestCarregarRepo(t *testing.T) {
@@ -144,3 +147,14 @@ func (s *bufSeguro) Write(p []byte) (int, error) {
 	return s.b.Write(p)
 }
 func (s *bufSeguro) String() string { s.mu.Lock(); defer s.mu.Unlock(); return s.b.String() }
+
+func TestPrecificacaoEfetiva(t *testing.T) {
+	c, err := Carregar("../../../config/antecipe.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, sobrescritos := c.PrecificacaoEfetiva(regras.Precificacao{Metodo: "DESCONTO_SIMPLES", TaxaMensalPercentual: decimal.NewFromInt(2), BaseDias: 30})
+	if p.Metodo != "DESCONTO_COMPOSTO" || p.BaseDias != 30 || !p.TaxaMensalPercentual.Equal(decimal.NewFromInt(2)) || len(sobrescritos) != 1 {
+		t.Fatalf("efetiva = %+v %v", p, sobrescritos)
+	}
+}

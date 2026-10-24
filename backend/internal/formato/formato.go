@@ -82,3 +82,13 @@ func dois(n int64) string {
 	}
 	return strconv.FormatInt(n, 10)
 }
+
+// ValorCSV formata centavos como no CSV do desafio (sem milhar): 227808 → "2278,08".
+func ValorCSV(centavos int64) string {
+	sinal := ""
+	if centavos < 0 {
+		sinal = "-"
+		centavos = -centavos
+	}
+	return sinal + strconv.FormatInt(centavos/100, 10) + "," + dois(centavos%100)
+}

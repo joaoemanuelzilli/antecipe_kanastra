@@ -62,6 +62,12 @@ func dv(s string, pesos []int) byte {
 	return byte('0' + 11 - resto)
 }
 
+// ComDV completa 12 caracteres com os 2 dígitos verificadores (usado para gerar dados de teste).
+func ComDV(base12 string) string {
+	b := base12 + string(dv(base12, pesos1))
+	return b + string(dv(b, pesos2))
+}
+
 // Raiz devolve os 8 primeiros caracteres (a raiz do CNPJ, que identifica a empresa).
 func Raiz(norm string) string {
 	if len(norm) < 8 {

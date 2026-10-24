@@ -66,7 +66,7 @@ type Calculadora struct {
 	i    decimal.Decimal // taxa ÷ 100
 	base decimal.Decimal
 
-	mu     sync.RWMutex
+	mu      sync.RWMutex
 	fatores map[int]decimal.Decimal // (1+i)^(dias/base), memorizado por prazo
 }
 

@@ -47,3 +47,12 @@ func TestFormatar(t *testing.T) {
 		t.Fatalf("Formatar curto = %q", got)
 	}
 }
+
+func TestComDV(t *testing.T) {
+	if got := ComDV("111222330001"); got != "11122233000183" {
+		t.Fatalf("ComDV = %q", got)
+	}
+	if got := ComDV("12ABC34501DE"); got != "12ABC34501DE35" {
+		t.Fatalf("ComDV alfanumérico = %q", got)
+	}
+}

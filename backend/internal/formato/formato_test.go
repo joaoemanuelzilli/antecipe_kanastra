@@ -71,3 +71,12 @@ func TestLista(t *testing.T) {
 		}
 	}
 }
+
+func TestValorCSV(t *testing.T) {
+	casos := map[int64]string{227808: "2278,08", 5: "0,05", 1000000: "10000,00"}
+	for c, esperado := range casos {
+		if got := ValorCSV(c); got != esperado {
+			t.Errorf("ValorCSV(%d) = %q, esperado %q", c, got, esperado)
+		}
+	}
+}
