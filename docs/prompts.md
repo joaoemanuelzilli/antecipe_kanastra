@@ -205,7 +205,20 @@ Depois disso, a IA seguiu o plano até a Tarefa 13 (12:15):
 - o pedido de ler com atenção `docker-compose.yml`, Dockerfiles e Makefile, que ainda não puderam ser executados sem Docker;
 - o formato de saída (pontos fortes, problemas por gravidade, o que deixou de julgar e veredito).
 
-**O que foi feito com a resposta:** _(preencher após a revisão)_
+**O que foi feito com a resposta:** o revisor confirmou que dinheiro, duplicidade, concorrência, idempotência e recuperação após reinício estão corretos, e mediu 500 mil linhas em 4,85 s. Ele apontou 12 problemas, e a IA os reclassificou pelo efeito na demo e nos critérios de nota.
+- **10 foram corrigidos numa rodada única**, cada um com teste que falhou antes e passou depois (o `.dockerignore` e o Makefile não têm teste):
+  - corrida na primeira subida do `make up`, que podia desclassificar: healthcheck por TCP, `restart` e espera pelo banco;
+  - prévia do gestor errada depois da cessão;
+  - erro 500 no `/validar` para arquivo inválido;
+  - BOM no CSV de download;
+  - perda de notas no `/validar` com aspas;
+  - textos de recusa mais claros;
+  - aviso para CSV separado por vírgula;
+  - erros do OpenTelemetry no log JSON;
+  - `.dockerignore`;
+  - `.env` como pré-requisito no Makefile.
+- **2 menores ficaram anotados:** a tabela leva cerca de 0,5 s por página com 500 mil linhas, e o id do span nos logs de etapa.
+- **Validação:** a subida com volume novo foi conferida no Docker.
 
 ---
 
