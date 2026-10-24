@@ -49,6 +49,31 @@ services:
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
 
+  # Assistente de IA (Agno + AgentOS, modelo via OpenRouter). Consulta a API como o front faz.
+  # Sem OPENROUTER_API_KEY ele sobe do mesmo jeito e /assistente/status responde disponivel=false.
+  ai:
+    restart: unless-stopped
+    build: ./ai
+    environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      AI_MODELO: ${AI_MODELO:-}
+      ANTECIPE_API_URL: http://api:8080
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: antecipe
+      DB_PASS: ${POSTGRES_PASSWORD}
+      DB_DATABASE: antecipe
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      AGNO_TELEMETRY: "false"
+    ports:
+      - "7777:7777"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+
   web:
     restart: unless-stopped
     build: ./frontend
@@ -56,6 +81,7 @@ services:
       - "3000:80"
     depends_on:
       - api
+      - ai
 
 volumes:
   pgdata:

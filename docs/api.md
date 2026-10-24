@@ -483,8 +483,25 @@ Sugestão de UI: ícone + texto em todo status (nunca só cor), filtro por motiv
 
 ---
 
+## Assistente de IA (serviço `ai`, fora desta API)
+
+O painel do assistente fala com outro serviço: o AgentOS na porta 7777, que o nginx expõe em `/ai/`. O contrato completo, com exemplo de streaming, está em [`ai/README.md`](../ai/README.md). Em resumo:
+
+- `GET /ai/assistente/status` → `{"disponivel": true, "agente_id": "antecipe-assistente", "modelo": "…"}`. Com `disponivel: false` (sem chave configurada), mostre o painel como indisponível.
+- `POST /ai/agents/antecipe-assistente/runs` (`multipart/form-data`) com os campos:
+  - `message`: a pergunta;
+  - `session_id`: um por conversa;
+  - `dependencies`: `{"lote_id": "…"}`, o lote aberto na tela;
+  - `stream`: `true` para SSE (eventos `RunContent`, `RunCompleted`, `RunError`) ou `false` para JSON.
+- **Erro do modelo vem com HTTP 200:** confira `"status": "ERROR"` (ou o evento `RunError`) antes de mostrar o `content`, que nesse caso é técnico.
+- A resposta vem em **markdown**. O assistente só consulta esta API, então os textos de recusa que ele cita são os mesmos daqui.
+- Em dev, configure o proxy do Vite `/ai` → `http://localhost:7777`, removendo o prefixo `/ai`.
+
+---
+
 ## Histórico do contrato
 
 - **v1 · 24/10/2026 11:00:** versão inicial.
+- **v1.3 · 24/10/2026 12:45:** seção do assistente de IA. É um serviço à parte, servido em `/ai/` e detalhado em `ai/README.md`. Esta API não mudou.
 - **v1.2 · 24/10/2026 12:15:** alinhado ao backend implementado. Erros de regras viram `422` (`REGRAS_INVALIDAS`, `SEM_MUDANCAS`). Entram `409 IDEMPOTENCY_KEY_REUTILIZADA` no upload e na cessão, `400 DATA_BASE_INVALIDA`/`UPLOAD_INVALIDO`, `?data_base` no `/validar` com CSV, `resumo` na resposta do PUT, `opcional` no catálogo, `grupo_nome` na concentração, campos extras em `DUPLICIDADE` e a rota `/metrics`.
 - **v1.1 · 24/10/2026 11:10:** preço padrão passa a ser **juros compostos** (`DESCONTO_COMPOSTO`), trocável em `config/antecipe.yaml`. Entram `precificacao` em `/config`, `/lotes/{id}` e `/validar`, `calculo.metodo` nas notas e `precificacao_efetiva` em `/regras`. Valores dos exemplos recalculados (R$ 10.000 a 30 dias → R$ 9.803,92).

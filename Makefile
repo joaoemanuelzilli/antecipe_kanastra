@@ -4,7 +4,7 @@ SHELL := /bin/bash
 N ?= 500000
 SEMENTE ?= 42
 
-.PHONY: ajuda up down logs test test-integracao gerar carga check demo-concorrencia
+.PHONY: ajuda up down logs logs-ai test test-ai test-integracao gerar carga check demo-concorrencia
 
 ajuda: ## Mostra os comandos
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-20s %s\n", $$1, $$2}'
@@ -29,8 +29,10 @@ up: .env ## Sobe Postgres, API e front (primeira vez: alguns minutos)
 	@echo "  API:              http://localhost:8080/api/saude"
 	@echo "  Traces (Jaeger):  http://localhost:16686"
 	@echo "  Métricas:         http://localhost:8080/metrics"
+	@echo "  Assistente (IA):  http://localhost:7777/docs"
 	@echo "  Senha do gestor:  $$(grep '^GESTOR_SENHA=' .env | cut -d= -f2)"
 	@echo ""
+	@grep -qE '^OPENROUTER_API_KEY=.+' .env || { echo "  Assistente de IA desligado: coloque OPENROUTER_API_KEY no .env e rode make up de novo."; echo ""; }
 
 down: ## Para tudo (os dados do banco ficam no volume)
 	docker compose down
@@ -38,8 +40,14 @@ down: ## Para tudo (os dados do banco ficam no volume)
 logs: ## Acompanha os logs da API
 	docker compose logs -f api
 
+logs-ai: ## Acompanha os logs do assistente de IA
+	docker compose logs -f ai
+
 test: ## Testes de unidade do backend (precisa de Go 1.27)
 	cd backend && go test ./...
+
+test-ai: ## Testes do assistente de IA (precisa do uv; não usa rede nem chave)
+	cd ai && uv venv -q --allow-existing --python 3.13 .venv && uv pip sync -q --python .venv/bin/python requirements-dev.txt && .venv/bin/python -m pytest -q
 
 test-integracao: .env ## Todos os testes, inclusive banco e ponta a ponta (Postgres do compose; precisa de Go 1.27)
 	docker compose up -d --wait postgres

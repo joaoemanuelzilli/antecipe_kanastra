@@ -24,7 +24,7 @@ make up
 
 Na primeira vez leva alguns minutos (build das imagens). O comando faz tudo:
 - cria o `.env` com senhas aleatórias (ele não vai para o git);
-- sobe Postgres, API, front e Jaeger;
+- sobe Postgres, API, assistente de IA, front e Jaeger;
 - aplica as migrations e carrega o estoque do desafio (100.554 notas).
 
 No fim ele mostra:
@@ -34,20 +34,24 @@ No fim ele mostra:
   API:              http://localhost:8080/api/saude
   Traces (Jaeger):  http://localhost:16686
   Métricas:         http://localhost:8080/metrics
+  Assistente (IA):  http://localhost:7777/docs
   Senha do gestor:  <gerada no .env>
 ```
+
+O assistente de IA é opcional: sem `OPENROUTER_API_KEY` no `.env`, todo o resto funciona e o `make up` avisa que ele está desligado (veja [Assistente de IA](#assistente-de-ia)).
 
 Outros comandos (`make` sozinho lista todos):
 
 | Comando | O que faz |
 |---|---|
 | `make down` | Para tudo (os dados ficam no volume) |
-| `make logs` | Acompanha os logs da API |
+| `make logs` / `make logs-ai` | Acompanha os logs da API / do assistente de IA |
 | `make gerar N=500000` | Gera um lote de teste em `amostras/` |
 | `make carga` | Mede lotes de 100k, 250k e 500k linhas |
 | `make demo-concorrencia` | Duas cessões simultâneas com notas em comum, sem venda duplicada |
 | `make check` | Procura segredos no repositório (gitleaks) |
 | `make test` / `make test-integracao` | Testes de unidade / todos, inclusive banco e ponta a ponta (precisam de Go 1.27) |
+| `make test-ai` | Testes do assistente de IA (precisa do `uv`; não usa rede nem chave) |
 
 ### Arquivos para testar
 
@@ -119,6 +123,28 @@ A API relê o arquivo sozinha e o próximo lote já usa o método novo, sem rein
 
 ---
 
+## Assistente de IA
+
+Um painel no canto direito da plataforma onde a empresa pergunta em linguagem natural, em vez de procurar na tabela:
+
+> "Como foi o processamento deste lote?" · "Por que a nota 725714 foi recusada?" · "Quantas notas foram recusadas por prazo?"
+
+É um serviço à parte (`ai/`), feito com [Agno](https://docs.agno.com) e servido pelo **AgentOS** na porta 7777. O modelo vem do **OpenRouter** (padrão `deepseek/deepseek-v4-flash`). O assistente **só consulta a API do Antecipe**, como o front: não lê as tabelas do backend, não envia lotes, não confirma cessões e não muda regras. Ele repete os textos oficiais de recusa da API, então tela, API e assistente dizem a mesma coisa.
+
+Para ligar, preencha a linha `OPENROUTER_API_KEY=` do `.env` com a sua chave e rode `make up` de novo.
+
+```bash
+# pergunta sobre o lote aberto na tela (o front manda o lote_id em dependencies)
+curl -F 'message=Quantas notas foram recusadas e por quê?' \
+     -F 'session_id=demo' -F 'stream=false' \
+     -F 'dependencies={"lote_id":"<id do lote>"}' \
+     http://localhost:7777/agents/antecipe-assistente/runs
+```
+
+Contrato para o front, ferramentas e decisões: [`ai/README.md`](ai/README.md).
+
+---
+
 ## Arquitetura
 
 **Backend em Go 1.27, arquitetura hexagonal.** O domínio e as regras de negócio não dependem de banco, HTTP nem arquivos.
@@ -147,7 +173,8 @@ backend/
     platform/              apperrors · observability (OpenTelemetry) · config (YAML) · document (CNPJ) · format (pt-BR)
     bootstrap/             raiz de composição (usada pela API e pelos testes ponta a ponta)
   test/e2e/                testes ponta a ponta (API + Postgres de verdade)
-frontend/                  React + Vite (servido por nginx, que repassa /api)
+ai/                        assistente de IA: Agno + AgentOS, ferramentas que consultam a API (Python)
+frontend/                  React + Vite (servido por nginx, que repassa /api e /ai)
 config/antecipe.yaml       comportamento ajustável (método de preço, data-base, fila)
 data/                      estoque, validadores, exemplo e situação cadastral simulada
 ```
@@ -181,6 +208,7 @@ GET /api/lotes/{id}  ◄─ o front consulta a cada 500 ms: etapa, linhas proces
 | Banco | PostgreSQL 18 |
 | Observabilidade | OpenTelemetry: traces OTLP no Jaeger, métricas em `/metrics`, `trace_id` em cada log |
 | Front | React 19 + Vite 8 + TypeScript (por outra pessoa do time, contra `docs/api.md`) |
+| Assistente de IA | Python 3.13, Agno 3.1 + AgentOS, modelo via OpenRouter, sessões no Postgres (schema `ai`) |
 | Infra | Docker Compose + Makefile |
 
 ---
@@ -258,4 +286,4 @@ O que construímos, as decisões e o que ficou de fora estão em [`docs/relatori
 
 ## Registro de prompts
 
-Todos os prompts de IA, em ordem cronológica e com o que foi feito de cada resposta: [`docs/prompts.md`](docs/prompts.md).
+Todos os prompts de IA, em ordem cronológica e com o que foi feito de cada resposta: [`docs/prompts.md`](docs/prompts.md) (backend) e [`docs/prompts2.md`](docs/prompts2.md) (assistente de IA, feito em paralelo noutra máquina). Os horários permitem intercalar os dois.

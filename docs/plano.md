@@ -20,7 +20,7 @@ Slogan do vídeo: **Importar. Decidir. Explicar. Simular.**
 | Design e UX | 25 | Mensagens de recusa claras, design, criatividade, interface |
 | Organização (filosofia Unix) | 20 | Cada parte faz uma coisa só, código limpo |
 | Logs e credenciais | 15 | Logs estruturados, **nenhum dado do CSV nos logs**, nenhum segredo no repositório |
-| Registro de prompts | 5 | `docs/prompts.md` em ordem cronológica, com o que foi feito de cada resposta |
+| Registro de prompts | 5 | `docs/prompts.md` (e `docs/prompts2.md`, do assistente de IA) em ordem cronológica, com o que foi feito de cada resposta |
 
 **Desclassifica:** app que não sobe seguindo o README. Por isso a regra é que `make up` funcione numa máquina limpa.
 
@@ -68,6 +68,7 @@ Para a demo e para medir o desempenho, precisamos de lotes com notas novas. Por 
 3. **Postgres + Docker**, e tudo sobe com **`make up`** para facilitar ao máximo para o jurado.
 4. **Divisão:** uma pessoa faz o **backend Go nesta máquina** (com o Claude Code), outra já está fazendo o **front React** em paralelo, e no fim integramos. O contrato entre os dois é o [`docs/api.md`](api.md).
 5. **Juros compostos por padrão** (alinhado com um jurado), configurável em **YAML** (`config/antecipe.yaml`) para voltar a simples sem mexer no código (seção 7).
+6. **Assistente de IA (24/10, ~12:15).** Um painel no canto direito da plataforma onde a empresa pergunta em linguagem natural: "como foi o processamento do lote?", "por que a nota X deu erro?", "quantas foram recusadas?". É um **serviço novo** (`ai/`), feito com **Agno + AgentOS** e com o modelo vindo do **OpenRouter**. Sobe no `make up` como os outros. A IA **explica e nunca decide**: aprovar, recusar e precificar continuam determinísticos no Go (seção 6, "Assistente de IA").
 
 ---
 
@@ -82,7 +83,7 @@ Para a demo e para medir o desempenho, precisamos de lotes com notas novas. Por 
 
 **Não-metas (ficam de fora e entram no relatório)**
 - Consulta real à Receita, login de várias empresas, assinatura da cessão, registradora, pagamento e deploy público.
-- IA dentro do app. O texto das recusas é determinístico, o que é mais rápido em 500 mil linhas, sem chave de API e sem risco.
+- IA na decisão ou no texto das recusas. Os dois continuam determinísticos, o que é mais rápido em 500 mil linhas, não precisa de chave e não corre risco de o modelo inventar. A IA entrou depois só como **assistente de consulta** (decisão 6), que repete os textos oficiais da API e é opcional: sem chave, todo o resto funciona.
 
 **Anti-metas (seria fracasso mesmo funcionando)**
 - Carregar 500 mil linhas no navegador ou numa única resposta JSON.
@@ -102,7 +103,8 @@ Para a demo e para medir o desempenho, precisamos de lotes com notas novas. Por 
 | Dinheiro | **centavos em `int64`** + **shopspring/decimal v1.6** só para taxa e fator composto (memorizado por prazo). Parâmetros do JSON lidos com `json.Number` | Exato e rápido em 500 mil linhas. Nada de `float64` em valor. |
 | Configuração | **YAML** (`go.yaml.in/yaml/v3` v3.0.5) em `config/antecipe.yaml` para o comportamento; **env** (`.env`) só para segredos e infra | Arquivo legível e versionado. Segredos fora do git. |
 | Front (outra pessoa) | **React 19 + Vite 8 + TypeScript**, Tailwind 4, shadcn/ui, TanStack Query (progresso por polling) e TanStack Table (paginação no servidor) | SPA simples, build estático servido por nginx. Não precisa de Next.js. |
-| Infra | **Docker Compose** (postgres, api, web) + **Makefile** | `make up` é o único comando. Jurado não precisa de Go nem de Node. |
+| Assistente de IA | **Python 3.13 + Agno 3.1.3 + AgentOS**, modelo via **OpenRouter** (padrão `deepseek/deepseek-v4-flash`, trocável em `AI_MODELO`), `httpx` para a API | AgentOS já entrega a API de chat (streaming SSE e sessões), e o OpenRouter deixa trocar de modelo sem mexer no código. Dependências resolvidas com data de corte (`--exclude-newer 2026-10-14`). |
+| Infra | **Docker Compose** (postgres, api, ai, web, jaeger) + **Makefile** | `make up` é o único comando. Jurado não precisa de Go, Python nem Node. |
 | Qualidade | `go test`, benchmarks `testing.B`, `go vet`, **gitleaks** (varredura de segredos) | Testes do motor, carga medida e repositório limpo. |
 
 Dependências Go previstas: `pgx/v5`, `go.yaml.in/yaml/v3` e `shopspring/decimal`, e mais nada essencial. Migrations em SQL puro embutidas no binário (`embed`) e aplicadas na subida.
@@ -139,8 +141,28 @@ backend/
     platform/              apperrors · observability (slog + OpenTelemetry) · config (YAML) · document (CNPJ) · format (pt-BR) · generator
     bootstrap/             raiz de composição (cmd/api e testes ponta a ponta)
   test/e2e/                testes ponta a ponta: aplicação inteira + Postgres
+ai/                        assistente de IA (Python, serviço à parte)
+  app/                     AgentOS: app HTTP, configuração, logs JSON
+  agents/                  o agente: modelo, instruções, ferramentas, histórico
+  tools/                   ferramentas que consultam a API (só GET) e formatação pt-BR
+  db/                      sessões do chat no Postgres (schema "ai")
+  tests/                   sem rede e sem chave (API simulada)
 config/antecipe.yaml · data/ · frontend/ · docs/ · docker-compose.yml · Makefile · .env.example · README.md
 ```
+
+### Assistente de IA
+
+```
+painel (React) ──► nginx /ai/ ──► AgentOS :7777 ──► agente ──► OpenRouter (modelo)
+                                      │              └─► 4 ferramentas ──► API do Antecipe :8080 (só GET)
+                                      └─► sessões do chat no Postgres, schema "ai"
+```
+
+- **Mais um cliente da API**, como o front. Não lê as tabelas do backend, não envia lote, não confirma cessão e não muda regra.
+- **Ferramentas:** `consultar_lote`, `buscar_notas`, `consultar_regras` e `consultar_formato_do_arquivo`. O lote padrão é o aberto na tela, que o front manda em `dependencies.lote_id`.
+- **Sem invenção:** as recusas são explicadas com o título, a mensagem e a ação oficiais da API. Valores e datas já saem formatados, então o modelo não converte nada.
+- **Opcional:** sem `OPENROUTER_API_KEY`, o serviço sobe, `/assistente/status` responde `disponivel: false` e o `make up` avisa que o assistente está desligado.
+- **Contrato do painel:** [`ai/README.md`](../ai/README.md).
 
 **Observabilidade:**
 - traces OTLP para o Jaeger (`http://localhost:16686`), com um span por requisição e um por etapa do lote;
@@ -302,6 +324,8 @@ Gerados pelo backend a partir de `(codigo, dados)` na leitura. Não guardamos 50
 
 Na primeira subida, a API aplica as migrations e, se o estoque estiver vazio, carrega `data/estoque_antecipe.zip` (100.554 linhas via `COPY`), a versão 1 das regras e a situação cadastral simulada. Também dá para rodar à mão com `antecipe importar-estoque`.
 
+O **assistente de IA** usa o mesmo Postgres e o mesmo usuário, mas no schema **`ai`**, onde o AgentOS cria as tabelas de sessões e execuções do chat (`agno_sessions`, `agno_runs` e outras). As tabelas acima ficam no `public`, e o assistente não as acessa.
+
 ---
 
 ## 10. API
@@ -323,6 +347,13 @@ Contrato completo em [`docs/api.md`](api.md). Esse arquivo é o que o dev do fro
 | POST | `/api/regras/previa` | Roda o último lote (ou um `lote_id`) com o JSON proposto e devolve antes e depois. Exige `X-Gestor-Senha`. |
 | PUT | `/api/regras` | Publica uma nova versão (valida o schema). Exige `X-Gestor-Senha`. |
 
+O assistente de IA tem a API dele, servida pelo AgentOS na porta 7777 e, pelo nginx, em `/ai/`:
+
+| Método | Rota | O que faz |
+|---|---|---|
+| GET | `/ai/assistente/status` | `disponivel` (há chave configurada?) e o modelo em uso |
+| POST | `/ai/agents/antecipe-assistente/runs` | Pergunta (`message`, `session_id`, `dependencies={"lote_id":…}`, `stream`), com resposta em SSE ou JSON |
+
 ---
 
 ## 11. Logs e credenciais (15 pts)
@@ -331,6 +362,11 @@ Contrato completo em [`docs/api.md`](api.md). Esse arquivo é o que o dev do fro
 - **Campos permitidos:** `request_id`, `metodo`, `rota` (o padrão, ex. `/api/lotes/{id}`), `status`, `duracao_ms`, `lote_id`, `etapa`, `linhas`, `aprovadas`, `recusadas`, `codigo_regra`, `versao_regras`.
 - **Proibido:** qualquer campo do CSV (nomes, CNPJs, números, valores, datas), nome do arquivo, corpo da requisição, senha do gestor e URL do banco.
 - **Garantia por teste:** `TestLogsNaoVazamDados` processa um arquivo de exemplo capturando os logs e falha se aparecer qualquer CNPJ, nome ou número do arquivo.
+- **Assistente de IA:** segue a mesma política.
+  - Os logs saem em JSON, com uma linha por requisição (rota como padrão, status, duração, `request_id`) e uma por consulta à API.
+  - Perguntas, respostas, buscas e dados de notas nunca vão para o log. Os clientes HTTP (`httpx`, `openai`) só logam a partir de WARNING, porque em INFO logam a URL com a busca do usuário. O teste de logs achou esse vazamento e cobre o caso.
+  - A telemetria do Agno está desligada.
+  - A `OPENROUTER_API_KEY` fica só no `.env`.
 - **Segredos:** só em variáveis de ambiente. `.env` fica no `.gitignore` e o repositório só tem o `.env.example`. **`make up` gera o `.env` com senhas aleatórias** (Postgres e gestor) se ele não existir, e mostra a senha do gestor no terminal, então o jurado não configura nada e nada secreto vai para o git. `make check` roda o gitleaks.
 
 ---
@@ -345,6 +381,13 @@ Contrato completo em [`docs/api.md`](api.md). Esse arquivo é o que o dev do fro
 - **Mandar um `Idempotency-Key`** (ex. `crypto.randomUUID()` por clique) na cessão, e travar o botão durante o envio.
 - **Dev:** proxy do Vite `/api` → `http://localhost:8080`. A API também libera CORS para `http://localhost:5173`.
 - **Integração no compose:** `frontend/Dockerfile` com build Node → nginx servindo `dist/` e fazendo proxy de `/api` para `api:8080` (`client_max_body_size 300m`). O backend deixa esse Dockerfile e o `nginx.conf` prontos.
+- **Painel do assistente de IA** (canto direito):
+  - consultar `GET /ai/assistente/status` para mostrar ou esconder o painel;
+  - perguntar em `POST /ai/agents/antecipe-assistente/runs` mandando o lote aberto na tela em `dependencies` e um `session_id` por conversa;
+  - renderizar a resposta em markdown;
+  - conferir `status: "ERROR"` (ou o evento `RunError`) antes de mostrar o texto.
+
+  Contrato e exemplo de SSE em [`ai/README.md`](../ai/README.md).
 - **Identidade visual sugerida:** a do vídeo (verde-escuro com destaque verde-limão, cards escuros, status com ícone e texto). As boas regras de UX e acessibilidade do PDF anterior continuam valendo: hero "Você recebe hoje R$ X", chips de aprovadas e recusadas, painel lateral com o detalhe, nunca status só por cor, teclado e `aria-live`.
 
 ---
@@ -362,6 +405,7 @@ Contrato completo em [`docs/api.md`](api.md). Esse arquivo é o que o dev do fro
 - **README.md:** o que é, pré-requisitos (Docker, Docker Compose, make), `make up`, URLs, senha do gestor, exemplos de `curl`, como testar, como gerar lotes grandes, decisões, limitações e o relatório curto.
 - **docs/relatorio.md:** problema, solução, arquitetura, regras, resultados medidos e próximos passos.
 - **docs/prompts.md:** atualizado a cada prompt. O dev do front registra os dele no mesmo arquivo, com horário, para a ordem cronológica fechar.
+- **docs/prompts2.md:** os prompts do assistente de IA, feitos em paralelo noutra máquina a partir das 12:07, no mesmo formato e com horário de Brasília. O `prompts.md` aponta para ele.
 - **Formulário de entrega** do Notion, até as 18:00. Ele pede: nome da equipe, integrantes (nome completo e e-mail de cada um), link do repositório no GitHub, caminho do arquivo de prompts (`docs/prompts.md`) e a confirmação de que o repositório está acessível. Não pede vídeo, slides nem URL pública. O repositório `joaoemanuelzilli/antecipe_kanastra` já está público.
 
 ---
@@ -393,6 +437,7 @@ Contrato completo em [`docs/api.md`](api.md). Esse arquivo é o que o dev do fro
 | `COPY` de 500k ficar lento | Medir cedo. Alternativa: gravar só as recusadas + agregados, e reconstruir as aprovadas do arquivo do lote. |
 | Memória com 500k linhas | Struct enxuta (~300 B/linha ≈ 150 MB). Se apertar, processar em blocos e gravar por bloco. |
 | Go/Docker indisponíveis nesta máquina | Primeiro bloco do cronograma resolve. Instalar o Go não precisa de sudo (tarball em `~/.local/go`). |
+| Assistente de IA sem chave ou com o OpenRouter fora do ar | O assistente é opcional: sobe sem chave, o painel mostra "indisponível" e o resto da aplicação não depende dele. As dependências Python estão fixadas para o build não variar. |
 
 ---
 
@@ -407,12 +452,13 @@ Contrato completo em [`docs/api.md`](api.md). Esse arquivo é o que o dev do fro
 7. Arredondamento **por nota**, meio-para-cima, e total = soma das notas.
 7a. "Composto" = **desconto racional composto** (`face ÷ (1 + i)^(dias/base)`), o padrão de mercado. Existe também o desconto comercial composto (`face × (1 − i)^n`), que daria R$ 9.800 a 30 dias, mas é pouco usado.
 7b. A chave de idempotência do upload inclui o método de preço em uso. Trocar o YAML e reenviar o arquivo gera um resultado novo.
-8. **Sem IA no app.** Textos determinísticos gerados pelo backend.
+8. **IA só para explicar, nunca para decidir.** Antes era "sem IA no app"; o time revisou isso em 24/10, ~12:15 (decisão 6). Os textos de recusa continuam determinísticos e gerados pelo backend. O assistente só consulta a API e repete esses textos.
 9. Linhas do upload com outro `NOME_FUNDO` são avaliadas pelas regras do ANTECIPE normalmente (o upload é uma oferta ao fundo do JSON).
 10. Autenticação do gestor por header `X-Gestor-Senha`, com a senha em env (simples, documentado como limitação).
 11. Front servido por nginx em `http://localhost:3000`, que repassa `/api` para a API em `:8080`.
 12. Subir o próprio estoque como lote devolve tudo como "Nota já vendida", e isso fica assim de propósito. Demo e medição usam os lotes do `make gerar`.
-13. Arquivo de prompts em `docs/prompts.md` (é esse o caminho que vai no formulário).
+13. Arquivo de prompts em `docs/prompts.md` (é esse o caminho que vai no formulário). Ele aponta para o `docs/prompts2.md`, com os prompts do assistente de IA.
+14. O assistente usa o **mesmo Postgres**, no schema `ai`, e não cria um banco novo nem uma senha nova. Os dados das notas que ele consulta vão para o OpenRouter e para o provedor do modelo. No desafio os dados são simulados; em produção isso pediria acordo com o provedor ou um modelo próprio.
 
 ## 18. Fica a critério de quem constrói
 

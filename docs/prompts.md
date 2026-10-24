@@ -8,6 +8,8 @@ Histórico de todos os prompts de IA usados no projeto, em ordem cronológica, c
 
 Cada entrada tem o prompt exato, o que a IA fez e o que o time fez com a resposta. Prompts que a IA mandou para subagentes aparecem dentro da entrada que os originou.
 
+> **Continua em [`prompts2.md`](prompts2.md):** os prompts do assistente de IA (serviço `ai/`), feitos em paralelo noutra máquina a partir das 12:07. Os dois arquivos usam o horário de Brasília, então as entradas se intercalam em ordem cronológica.
+
 ---
 
 ## #1 · 24/10/2026 10:14 · Exploração do contexto e plano
