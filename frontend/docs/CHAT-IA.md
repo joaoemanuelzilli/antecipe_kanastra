@@ -11,3 +11,17 @@ Suba a infraestrutura conforme o README do grupo e configure os segredos apenas 
 O chat recebe RunContent progressivamente e exige RunCompleted. RunError e interrupções descartam a resposta parcial, preservando a pergunta para nova tentativa. Requisições têm timeout e cancelamento ao sair do contexto.
 
 Validação: desktop e 360px, indisponibilidade local, testes de status, FormData, erro HTTP200 e conteúdo vazio. Resposta real de modelo ainda não validada: o serviço local não estava ativo.
+
+## Endereço por ambiente
+
+Em `.env.local` (desenvolvimento) ou nas variáveis de build da hospedagem:
+
+```env
+VITE_AI_BASE_URL=https://seu-backend.example/ai
+```
+
+A base inclui `/ai` quando usa o nginx do grupo. Vazia usa `/ai` na mesma origem. A variável é pública: não recebe chave ou senha. Status e conversas usam a mesma base. Uma origem diferente exige CORS no serviço. Reinicie o Vite após alterar; em produção, gere um novo build.
+
+Para usar o proxy de desenvolvimento sem CORS, deixe VITE_AI_BASE_URL vazia e configure AI_PROXY_TARGET com a origem do nginx, por exemplo http://localhost:3000. O proxy conserva o prefixo /ai.
+
+No Docker, VITE_AI_BASE_URL é argumento de build. Com o nginx do grupo, prefira deixá-la vazia e configure AI_UPSTREAM no servidor; a chave interna continua apenas no nginx/backend.

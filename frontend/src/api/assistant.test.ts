@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { askAssistant, assistantStatus } from './assistant';
-afterEach(() => vi.unstubAllGlobals());
+import { askAssistant, assistantStatus, assistantURL } from './assistant';
+afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 describe('contrato do assistente', () => {
   it('respeita disponibilidade e indisponibilidade', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(Response.json({ disponivel: true })).mockResolvedValueOnce(Response.json({ disponivel: false }));
@@ -44,5 +44,18 @@ describe('streaming AgentOS', () => {
   it('não aceita conexão interrompida como resposta concluída', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(streamed(['event: RunContent\ndata: {"content":"Parcial"}\n\n'])));
     await expect(askAssistant('Oi', 's', undefined, undefined, vi.fn())).rejects.toThrow('Não consegui responder');
+  });
+});
+
+describe('endereço configurável da IA', () => {
+  it('usa a mesma origem por padrão e normaliza a base configurada', () => {
+    vi.stubEnv('VITE_AI_BASE_URL', ''); expect(assistantURL('/assistente/status')).toBe('/ai/assistente/status');
+    vi.stubEnv('VITE_AI_BASE_URL', ' https://grupo.example/ai/// '); expect(assistantURL('/assistente/status')).toBe('https://grupo.example/ai/assistente/status');
+  });
+  it('aplica a base tanto ao status quanto à conversa', async () => {
+    vi.stubEnv('VITE_AI_BASE_URL', 'https://grupo.example/ai');
+    const fetchMock = vi.fn().mockResolvedValueOnce(Response.json({ disponivel: true })).mockResolvedValueOnce(Response.json({ status: 'COMPLETED', content: 'Resposta' })); vi.stubGlobal('fetch', fetchMock);
+    await assistantStatus(); await askAssistant('Oi', 'sessao');
+    expect(fetchMock.mock.calls.map(call => call[0])).toEqual(['https://grupo.example/ai/assistente/status', 'https://grupo.example/ai/agents/antecipe-assistente/runs']);
   });
 });

@@ -1,7 +1,12 @@
+/** Includes the /ai prefix when using the group's nginx; never contains credentials. */
+export function assistantURL(path: string): string {
+  const base = (import.meta.env.VITE_AI_BASE_URL?.trim() || '/ai').replace(/\/+$/, '');
+  return `${base}/${path.replace(/^\/+/, '')}`;
+}
 export const ASSISTANT_UNAVAILABLE = 'O assistente está indisponível agora. Tente novamente em instantes.';
 const RESPONSE_ERROR = 'Não consegui responder agora. Tente novamente.';
 export async function assistantStatus(signal?: AbortSignal): Promise<boolean> {
-  const response = await fetch('/ai/assistente/status', { signal: AbortSignal.any([AbortSignal.timeout(10000), ...(signal ? [signal] : [])]) });
+  const response = await fetch(assistantURL('/assistente/status'), { signal: AbortSignal.any([AbortSignal.timeout(10000), ...(signal ? [signal] : [])]) });
   if (!response.ok) throw new Error(ASSISTANT_UNAVAILABLE);
   try { return (await response.json()).disponivel === true; }
   catch { throw new Error(ASSISTANT_UNAVAILABLE); }
@@ -49,7 +54,7 @@ export async function askAssistant(question: string, sessionId: string, lotId?: 
   const form = new FormData();
   form.append('message', question); form.append('session_id', sessionId); form.append('stream', onContent ? 'true' : 'false');
   if (lotId) form.append('dependencies', JSON.stringify({ lote_id: lotId }));
-  const response = await fetch('/ai/agents/antecipe-assistente/runs', { method: 'POST', body: form, signal: AbortSignal.any([AbortSignal.timeout(90000), ...(signal ? [signal] : [])]) });
+  const response = await fetch(assistantURL('/agents/antecipe-assistente/runs'), { method: 'POST', body: form, signal: AbortSignal.any([AbortSignal.timeout(90000), ...(signal ? [signal] : [])]) });
   if (!response.ok) throw new Error(RESPONSE_ERROR);
   if (response.headers.get('Content-Type')?.includes('text/event-stream')) return readAssistantStream(response, onContent ?? (() => {}));
   let data: { status?: string; content?: unknown };

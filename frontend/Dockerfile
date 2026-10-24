@@ -6,6 +6,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --fetch-retries=1 --fetch-retry-mintimeout=2000 --fetch-retry-maxtimeout=5000 \
  || npm ci --registry=https://registry.yarnpkg.com/
 COPY . .
+ARG VITE_AI_BASE_URL=
+ENV VITE_AI_BASE_URL=$VITE_AI_BASE_URL
 RUN npm run build
 
 FROM nginx:1.27-alpine
