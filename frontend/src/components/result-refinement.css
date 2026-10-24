@@ -46,3 +46,10 @@
 .result-page .refusal-summary li button>span{flex:1;min-width:0}.result-page .refusal-summary li button>strong{font-size:12px;font-weight:500;white-space:nowrap;color:#7e3940}
 .result-page .refusal-summary li button:hover,.result-page .refusal-summary li button.selected{background:#eef8f2;color:#004639;border-radius:10px}.result-page .refusal-summary>p{padding:10px 28px 16px;margin:0;font-size:11px;color:#5e6b62}
 @media(max-width:700px){.result-page .refusal-summary>ul{grid-template-columns:1fr;padding-inline:12px}.result-page .refusal-summary>summary{padding-inline:16px}.result-page .refusal-summary>p{padding-inline:20px}}
+@media(min-width:761px){
+ .result-page{padding-bottom:112px}
+ .result-page .confirmation-bar{position:fixed;left:calc(106px + var(--app-content-gutter));right:160px;bottom:24px;width:auto;max-width:1100px;margin:0 auto;border:1px solid #dce7df;border-radius:20px;background:#fff;box-shadow:0 8px 32px #003b291a;z-index:25}
+ .result-page .confirmation-inner{width:100%;max-width:none;padding:14px 20px;gap:20px;min-height:70px;flex-direction:row;align-items:center}
+ .result-page .confirmation-info{gap:12px;min-width:0}.result-page .confirmation-info>svg{width:20px;height:20px;flex-shrink:0}.result-page .confirmation-info strong{font-size:12px;line-height:1.6}.result-page .confirmation-info p{font-size:11px;line-height:1.6;margin-top:3px}
+ .result-page .confirmation-inner>.button{min-height:44px;padding:10px 16px;font-size:12px;border-radius:14px;flex-shrink:0}
+}
