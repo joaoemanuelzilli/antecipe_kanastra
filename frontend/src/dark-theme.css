@@ -10,7 +10,7 @@
 .theme-toggle[data-dark=true]{color:#a6efc8}
 .theme-toggle[data-dark=true] .theme-sun{opacity:0;transform:rotate(90deg) scale(.4)}
 .theme-toggle[data-dark=true] .theme-moon{opacity:1;transform:rotate(0) scale(1)}
-@media(min-width:761px){.rail-inner{gap:40px}.app-rail{max-height:calc(100dvh - 160px)}.rail-inner{max-height:inherit}}
+@media(min-width:761px){.rail-inner{gap:12px;padding-block:24px}.rail-brand{margin-bottom:8px}.app-rail{max-height:calc(100dvh - 160px)}.rail-inner{max-height:inherit}}
 @media(max-height:600px) and (min-width:761px){.rail-inner{gap:16px;padding-block:20px}}
 @media(max-width:760px){
   .rail-footer{left:auto;right:8px;bottom:calc(14px + env(safe-area-inset-bottom));width:calc((100% - 16px)/4);z-index:41}
