@@ -2,7 +2,7 @@
 .manager-transition-fill{position:absolute;inset:0;background:#00ce64;animation:manager-fill 650ms cubic-bezier(.65,0,.25,1) both}
 .manager-transition-copy{position:relative;text-align:center;color:#003f35;padding:24px;animation:manager-copy 1900ms ease both}
 .manager-transition-icon{display:grid;place-items:center;margin:0 auto 24px;width:80px;height:80px;border-radius:28px;background:rgba(255,255,255,.35)}
-.manager-transition-copy h1{font-size:30px;font-weight:600;margin:0 0 12px;letter-spacing:-.7px}
+.manager-transition-copy h2{font-size:30px;font-weight:600;margin:0 0 12px;letter-spacing:-.7px}
 .manager-transition-copy p{font-size:15px;margin:0}
 .manager-transition-progress{display:block;width:180px;height:4px;border-radius:8px;background:rgba(0,63,53,.15);margin:32px auto 0;overflow:hidden}
 .manager-transition-progress span{display:block;height:100%;background:#003f35;border-radius:inherit;transform-origin:left;animation:manager-progress 1300ms 400ms ease both}
@@ -11,3 +11,5 @@
 @keyframes manager-progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @media(prefers-reduced-motion:reduce){.manager-transition-fill,.manager-transition-copy,.manager-transition-progress span{animation:none}}
 :root[data-profile-reduced-motion="true"] .manager-transition-fill,:root[data-profile-reduced-motion="true"] .manager-transition-copy,:root[data-profile-reduced-motion="true"] .manager-transition-progress span{animation:none}
+
+.role-transition-bot{display:block;width:291px;height:163px;max-width:100%;object-fit:contain;margin:0 auto 24px}.manager-transition-copy{width:min(100%,440px)}

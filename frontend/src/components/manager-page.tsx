@@ -3,7 +3,7 @@ import { ArrowRight, CheckCircle2, Code2, Download, Eye, History, ListChecks, Lo
 import { ApiError, MOCK_MODE, clearGestorSenha, getGestorSenha, setGestorSenha, getRegras, getVersao, getVersoes, previaRegras, publicarRegras, verificarGestor } from '@/api/client';
 import type { DetalheVersao, ParametroCatalogo, Previa, Regras, RegrasPublicadas, VersaoRegras } from '@/api/types';
 import { useRouter } from '@/lib/router';
-import './manager-transition.css';
+import { RoleTransition } from './role-transition';
 import './manager-page.css';
 import { dateBR, moneyCentavos } from '@/lib/format';
 import { validateDraft, withRuleParameter } from '@/lib/rule-draft';
@@ -36,7 +36,7 @@ export function ManagerPage() {
     const timer = window.setTimeout(() => setEntering(false), 1900);
     return () => window.clearTimeout(timer);
   }, []);
-  if (entering) return <div className="manager-transition" role="status" aria-live="polite"><div className="manager-transition-fill" /><div className="manager-transition-copy"><span className="manager-transition-icon"><ShieldCheck size={36} strokeWidth={1.5} /></span><h1>Entrando como gestor</h1><p>Preparando seu ambiente…</p><span className="manager-transition-progress" aria-hidden="true"><span /></span></div></div>;
+  if (entering) return <RoleTransition role="manager" />;
   return <ManagerContent />;
 }
 
