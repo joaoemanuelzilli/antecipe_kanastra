@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import type { Lote } from '@/api/types';
+import { useDemoProfile } from '@/lib/demo-profile';
 import './document-loading.css';
 
 export interface DocumentLoadingPanelProps {
@@ -22,7 +23,8 @@ export function DocumentLoadingPanel({ lot, phase = lot ? 'analyzing' : 'prepari
   const [reducedMotion, setReducedMotion] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [visible, setVisible] = useState(() => typeof document === 'undefined' || document.visibilityState === 'visible');
   const [videoFailed, setVideoFailed] = useState(false);
-  const mayAnimate = !reducedMotion && visible && !error;
+  const { reducedMotion: userReducedMotion } = useDemoProfile();
+  const mayAnimate = !reducedMotion && !userReducedMotion && visible && !error;
 
   useEffect(() => { title.current?.focus({ preventScroll: true }); }, []);
   useEffect(() => {
@@ -54,7 +56,7 @@ export function DocumentLoadingPanel({ lot, phase = lot ? 'analyzing' : 'prepari
   return <section className="document-loading-panel">
     <Dialog.Title ref={title} tabIndex={-1} className="sr-only">{phase === 'uploading' ? 'Enviando seu arquivo' : phase === 'preparing' ? 'Preparando seu lote' : 'Analisando suas notas'}</Dialog.Title>
     <Dialog.Description className="sr-only">Acompanhe o andamento do lote. Ao cancelar esta tela, um arquivo já enviado permanece disponível no histórico para consulta.</Dialog.Description>
-    <div className="document-loading-media" aria-hidden="true"><img className="document-loading-poster" src={POSTER} width="832" height="468" alt="" />{!reducedMotion && !videoFailed ? <video ref={video} className="document-loading-video" src={VIDEO} width="832" height="468" autoPlay={mayAnimate} muted loop playsInline preload="metadata" poster={POSTER} aria-hidden="true" tabIndex={-1} disablePictureInPicture disableRemotePlayback onError={() => setVideoFailed(true)} /> : null}</div>
+    <div className="document-loading-media" aria-hidden="true"><img className="document-loading-poster" src={POSTER} width="832" height="468" alt="" />{!reducedMotion && !userReducedMotion && !videoFailed ? <video ref={video} className="document-loading-video" src={VIDEO} width="832" height="468" autoPlay={mayAnimate} muted loop playsInline preload="metadata" poster={POSTER} aria-hidden="true" tabIndex={-1} disablePictureInPicture disableRemotePlayback onError={() => setVideoFailed(true)} /> : null}</div>
     <div className="document-loading-status"><div className={`document-loading-track${percent === null ? ' is-indeterminate' : ''}${error ? ' has-error' : ''}`} role="progressbar" aria-label={phase === 'uploading' ? 'Progresso do envio' : 'Progresso da análise'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? undefined} aria-valuetext={percent === null ? 'Andamento ainda não informado' : `${percent.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`}><span style={percent === null ? undefined : { width: `${percent}%` }} /></div><div className="document-loading-status-row"><p>{label}</p>{counter ? <span className="document-loading-counter" aria-label={counterLabel}>{counter}</span> : null}</div><p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>{error ? <div className="document-loading-error" role="alert"><p>{error}</p>{onRetry ? <button type="button" onClick={onRetry}>Tentar novamente</button> : null}</div> : null}</div>
     <button className="document-loading-cancel" type="button" onClick={onCancel}>Cancelar</button>
   </section>;
