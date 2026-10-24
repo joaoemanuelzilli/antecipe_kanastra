@@ -5,6 +5,7 @@ import Link from '@/lib/link';
 import { Modal } from './ui/dialog';
 import { Button } from './ui/button';
 import './demo-login.css';
+import './auth-page.css';
 
 const DEMO_ACCESS_KEY = 'antecipe.demo.access.v1';
 
@@ -58,10 +59,10 @@ export function DemoLoginPage({ onEnter }: { onEnter?: () => void } = {}) {
         <form className="demo-login-form" onSubmit={submit} autoComplete="off">
           <p className="demo-login-notice">Acesso de demonstração · Use dados fictícios</p>
           <div className="demo-login-fields">
-            <label className="sr-only" htmlFor="demo-login-email">E-mail fictício</label>
-            <input id="demo-login-email" name="demo-email" className="demo-login-input" type="email" placeholder="Insira seu e-mail fictício" value={email} onChange={(event) => { setEmail(event.target.value); setError(''); }} required autoComplete="off" spellCheck={false} autoCapitalize="none" aria-describedby="demo-login-guidance" />
-            <div className="demo-login-password">
-              <label className="sr-only" htmlFor="demo-login-password">Senha fictícia</label>
+            <div className="auth-field"><label htmlFor="demo-login-email">E-mail fictício</label>
+            <input id="demo-login-email" name="demo-email" className="demo-login-input" type="email" placeholder="Insira seu e-mail fictício" value={email} onChange={(event) => { setEmail(event.target.value); setError(''); }} required autoComplete="off" spellCheck={false} autoCapitalize="none" aria-describedby="demo-login-guidance" /></div>
+            <div className="demo-login-password auth-field">
+              <label htmlFor="demo-login-password">Senha fictícia</label>
               <input id="demo-login-password" name="demo-password" className="demo-login-input" type={passwordVisible ? 'text' : 'password'} placeholder="Insira uma senha fictícia" value={password} onChange={(event) => { setPassword(event.target.value); setError(''); }} required autoComplete="off" aria-describedby="demo-login-guidance" />
               <button className="demo-login-eye" type="button" onClick={() => setPasswordVisible((visible) => !visible)} aria-label={passwordVisible ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={passwordVisible}><img src="/figma/eye-closed.svg" alt="" width={24} height={24} /></button>
             </div>
@@ -70,6 +71,7 @@ export function DemoLoginPage({ onEnter }: { onEnter?: () => void } = {}) {
           <button className="demo-login-submit" type="submit">Acessar demonstração</button>
           <p className="demo-login-guidance" id="demo-login-guidance">Nenhum cadastro ou senha real é necessário.</p>
           {error ? <p className="demo-login-error" role="alert">{error}</p> : null}
+          <div className="auth-footer"><p className="auth-switch">Ainda não tem conta? <Link href="/cadastro" state={location.state}>Criar conta</Link></p></div>
         </form>
       </section>
       <button className="demo-login-explore" type="button" onClick={enterDemo}>

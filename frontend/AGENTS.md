@@ -1,5 +1,5 @@
-# Frontend do grupo — referência do contrato v1.4
-- A fonte da verdade é `docs/api.md` na raiz do repositório do grupo. A cópia integral consultada em `main` (`e5592fe`) fica em `docs/api-grupo-v1.4.md`; a v1.1 é histórica.
+# Frontend do grupo — referência do contrato v1.5
+- A fonte da verdade é `docs/api.md` na raiz do repositório do grupo. A cópia integral consultada em `main` (`ef95af8`) fica em `docs/api-grupo-v1.5.md`; v1.1/v1.4 são históricas.
 - React + Vite, API Go externa. Não adicionar motor financeiro, Supabase, Next.js ou IA ao frontend.
 - O backend Go já está implementado no repositório. Os mocks exercitam cenários da UI; não atribuir a eles paridade financeira/gabarito v1.4 nem resultados de testes reais do Go.
 - JSON snake_case; dinheiro inteiro em centavos; datas civis ISO.
@@ -12,7 +12,7 @@
 - Teste local a partir da raiz: `cd frontend`, `npm ci`, `npm run demo` (Node >=22.12.0, porta padrão5173). `.env.demo` é versionado; nenhum segredo, Supabase, Go, Docker ou Vercel é necessário. `npm run dev` e `npm run build` usam o Go; build isolado de demonstração é `npm run build:demo`.
 
 - Visual atual: Figma EFdeJ9T6mnBayCJcbh60aT / seção 1:913; login demo e dashboard verde com Parkinsans. Assets originais em public/figma.
-- Landing pública em /; Dashboard em /dashboard; envio em /enviar. Login /login é somente demo, sem credenciais reais; nunca transformar o marcador local em autenticação de produção.
+- Landing pública em /; Dashboard em /dashboard; envio em /enviar. Login /login usa sessão do Go fora do mock; no mock é demonstrativo. Nunca usar o marcador demo como autenticação real.
 
 - Grade horizontal única em `src/app-layout.css`: conteúdo de até1280px, gutter64/40/20px e centralização dentro de `.app-workspace`. Todas as páginas usam `.container`, inclusive Dashboard e o conteúdo interno do Resultado. Não definir larguras/margens horizontais próprias por página nem somar a sidebar novamente. Rodapé, perfil e confirmação seguem a mesma grade; modais mantêm suas dimensões próprias.
 
@@ -28,3 +28,6 @@
 - Mobile: `src/mobile.css` é importado após App para consolidar os ajustes até760px. Navegação inferior com rótulos e safe-area, áreas de toque de44px+, inputs16px para evitar zoom no iOS, cartões de notas, paginação API, chat e envio em tela cheia. Não ocultar controles para corrigir overflow; JSON/tabelas técnicas mantêm rolagem local. Validar360px e767px. Markdown do chat carregado sob demanda.
 
 - Loading: upload/preparação/análise usam indicador simples (`showMedia=false`), sem vídeo ou espera artificial na UI. Mock de análise700ms. O robô aparece na confirmação da cessão via CessionModal, que reutiliza o padrão visual de Novo lote. Durante a requisição de cessão não permitir fechar/cancelar nem submeter novamente. A mesma chave de idempotência é mantida em retries. O mock simula1.200ms de resposta; backend real sem atraso artificial.
+
+- Contas v1.5 integradas conforme docs/api-grupo-v1.5.md, main ef95af8. Login real em /login, cadastro /cadastro em duas etapas (inclui empresa/CNPJ), sessão HttpOnly em /api/auth/eu e logout no servidor. Perfil real mostra dados do backend; sem inventar edição/troca de senha. Histórico conectado em GET /api/lotes, somente resumos. Mock continua explícito.
+- Chat suporta blocos antecipe-chart com tipo/metrica/lote_id validados; valores vêm de GET /api/lotes/{id}, não do texto do modelo. Documentação em docs/auth-e-graficos.md.

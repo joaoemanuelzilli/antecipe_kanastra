@@ -1,3 +1,4 @@
+import { AccountProfile } from './account-profile';
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Building2, Check, Eye, EyeOff, KeyRound, LogOut, Monitor, ShieldCheck, UserRound } from 'lucide-react';
@@ -15,7 +16,9 @@ import './profile-page.css';
 type ProfileFields = Pick<DemoProfile, 'name' | 'email' | 'company' | 'role'>;
 const fields = ({ name, email, company, role }: DemoProfile): ProfileFields => ({ name, email, company, role });
 
-export function ProfilePage() {
+export function ProfilePage() { return MOCK_MODE ? <DemoProfilePage /> : <AccountProfile />; }
+
+function DemoProfilePage() {
   const profile = useDemoProfile();
   const navigate = useNavigate();
   const [draft, setDraft] = useState(() => fields(profile));

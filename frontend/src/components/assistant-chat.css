@@ -10,3 +10,51 @@
 .assistant-suggestions button:disabled{color:#596b60;background:#f7f9f7;cursor:not-allowed}.assistant-chat-unavailable{margin-top:24px;padding:18px;background:#f2f6f3;border-radius:16px;font-size:13px;line-height:1.7;color:#354d3e}.assistant-chat-unavailable strong{display:block;margin-bottom:8px}.assistant-chat-unavailable button{background:#fff;color:#004639;border:1px solid #c5d8cc;border-radius:12px;min-height:44px;padding:10px 12px;margin-top:16px;font-size:12px}
 
 .assistant-markdown{font-size:14px;line-height:1.8;overflow-wrap:anywhere}.assistant-markdown p{white-space:normal;margin:0 0 14px}.assistant-markdown ul,.assistant-markdown ol{padding-left:22px;margin:12px 0}.assistant-markdown li{margin:6px 0}.assistant-markdown h1,.assistant-markdown h2,.assistant-markdown h3{font-size:16px;margin:18px 0 10px;line-height:1.5}.assistant-markdown a{color:#004639;text-decoration:underline;text-underline-offset:3px}.assistant-markdown pre{overflow:auto;max-width:100%;padding:12px;background:#f3f6f4;border-radius:12px}.assistant-markdown code{font-size:12px}
+
+/* Response typography stays scoped to the assistant, including streamed replies. */
+.assistant-message.assistant{padding:2px 0 12px;margin-bottom:24px}
+.assistant-message.assistant>strong{display:flex;align-items:center;gap:7px;color:#004639;font-size:11px;font-weight:600;margin-bottom:14px}
+.assistant-message.assistant>strong:before{content:"";width:6px;height:6px;background:#00a953;border-radius:50%;flex-shrink:0}
+.assistant-markdown{font-size:14px;line-height:1.75;color:#293d31;min-width:0}
+.assistant-markdown>:first-child{margin-top:0}.assistant-markdown>:last-child{margin-bottom:0}
+.assistant-markdown p{font-size:14px;line-height:1.75;margin:0 0 14px;white-space:normal}
+.assistant-markdown h3,.assistant-markdown h4{font-weight:600;color:#163b29;letter-spacing:-.02em;text-wrap:pretty}
+.assistant-markdown h3{font-size:16px;line-height:1.4;margin:24px 0 10px}
+.assistant-markdown h3.assistant-answer-title{font-size:18px;line-height:1.35}
+.assistant-markdown h4{font-size:14px;line-height:1.5;margin:20px 0 8px}
+.assistant-markdown strong{font-weight:600;color:#173e2b}
+.assistant-markdown em{color:#466151}
+.assistant-markdown ul,.assistant-markdown ol{margin:12px 0 18px;padding-left:23px;list-style-position:outside}
+.assistant-markdown ul{list-style-type:disc}.assistant-markdown ol{list-style-type:decimal}
+.assistant-markdown ul ul{list-style-type:circle}.assistant-markdown ol ol{list-style-type:lower-alpha}
+.assistant-markdown li{padding-left:3px;margin:8px 0;line-height:1.7}
+.assistant-markdown li::marker{color:#087d4b;font-weight:600}
+.assistant-markdown li>p{margin:0 0 8px}.assistant-markdown li>ul,.assistant-markdown li>ol{margin:6px 0 10px}
+.assistant-markdown .contains-task-list{list-style:none;padding-left:0}.assistant-markdown .task-list-item{padding-left:0}
+.assistant-markdown input[type=checkbox]{accent-color:#008b4c;width:14px;height:14px;margin-right:8px;vertical-align:middle}
+.assistant-markdown blockquote{margin:18px 0;padding:14px 16px;background:#f0f8f3;border:1px solid #d7e9dd;border-radius:12px;color:#345442}
+.assistant-markdown blockquote p:last-child{margin-bottom:0}
+.assistant-markdown hr{border:0;border-top:1px solid #dfeae3;margin:22px 0}
+.assistant-markdown a{color:#006743;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;overflow-wrap:anywhere}
+.assistant-markdown a:hover{color:#003f2d;text-decoration-thickness:2px}
+.assistant-markdown :not(pre)>code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.87em;background:#eef4f0;color:#24543b;padding:2px 5px;border-radius:5px;box-decoration-break:clone}
+.assistant-code-block{margin:16px 0 20px;border:1px solid #dce7e0;border-radius:12px;overflow:hidden;background:#f5f8f6}
+.assistant-code-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:3px 12px;background:#edf3ef;border-bottom:1px solid #dce7e0;font-size:11px;color:#4a6354}
+.assistant-code-heading button{display:flex;align-items:center;gap:6px;min-height:36px;background:transparent;border:0;color:#24543b;font-size:11px;border-radius:6px;padding:4px}
+.assistant-code-heading button:hover{color:#007a44;background:#dcece2}
+.assistant-markdown .assistant-code-block pre{margin:0;padding:14px;background:transparent;border-radius:0;max-height:280px;overflow:auto;white-space:pre;tab-size:2;line-height:1.65;scrollbar-width:thin}
+.assistant-markdown pre code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;color:#244b35;white-space:pre;overflow-wrap:normal}
+.assistant-markdown .assistant-copy-error{padding:0 12px 12px;font-size:11px}
+.assistant-table-scroll{max-width:100%;overflow:auto;margin:16px 0 20px;border:1px solid #dce7e0;border-radius:12px;scrollbar-width:thin;scrollbar-color:#accbb8 transparent}
+.assistant-markdown table{width:100%;border-collapse:collapse;font-size:12px;line-height:1.6;font-variant-numeric:tabular-nums}
+.assistant-markdown th{font-weight:600;color:#214e35;background:#edf5ef;white-space:nowrap}
+.assistant-markdown th,.assistant-markdown td{padding:10px 12px;border-bottom:1px solid #e2ebe5;text-align:left;min-width:90px;vertical-align:top}
+.assistant-markdown td{color:#354d3f}.assistant-markdown tbody tr:nth-child(even){background:#f8faf9}
+.assistant-markdown tbody tr:last-child td{border-bottom:0}
+.assistant-markdown td[align=right],.assistant-markdown th[align=right]{text-align:right}
+.assistant-markdown td[align=center],.assistant-markdown th[align=center]{text-align:center}
+.assistant-markdown .footnotes{font-size:12px;color:#53685b;border-top:1px solid #dfeae3;margin-top:20px;padding-top:12px}
+.assistant-markdown .footnotes h2{font-size:13px}.assistant-markdown .footnotes p{font-size:12px}
+.assistant-markdown pre:focus-visible,.assistant-table-scroll:focus-visible{outline:2px solid #008b4c;outline-offset:-2px}
+.assistant-markdown img{max-width:100%;height:auto;border-radius:10px}
+@media(max-width:760px){.assistant-code-heading button{min-height:44px}.assistant-markdown h3{font-size:17px}.assistant-markdown h3.assistant-answer-title{font-size:19px}}

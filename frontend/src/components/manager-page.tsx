@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ArrowRight, CheckCircle2, Code2, Download, Eye, History, ListChecks, LoaderCircle, LogOut, RefreshCw, Send, ShieldCheck, Undo2 } from 'lucide-react';
+import { logoutAccount } from '@/api/auth';
 import { ApiError, MOCK_MODE, clearGestorSenha, getGestorSenha, setGestorSenha, getRegras, getVersao, getVersoes, previaRegras, publicarRegras, verificarGestor } from '@/api/client';
 import type { DetalheVersao, ParametroCatalogo, Previa, Regras, RegrasPublicadas, VersaoRegras } from '@/api/types';
 import { useRouter } from '@/lib/router';
@@ -44,7 +45,7 @@ function ManagerContent() {
   const [rules, setRules] = useState<RegrasPublicadas | null>(null);
   const [initialError, setInitialError] = useState<unknown>(null);
   const [authenticated, setAuthenticated] = useState(MOCK_MODE);
-  const [checkingAccess, setCheckingAccess] = useState(() => !MOCK_MODE && Boolean(getGestorSenha()));
+  const [checkingAccess, setCheckingAccess] = useState(!MOCK_MODE);
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState<unknown>(null);
   const [loginBusy, setLoginBusy] = useState(false);
@@ -60,7 +61,6 @@ function ManagerContent() {
     if (MOCK_MODE) return;
     let alive = true;
     const saved = getGestorSenha();
-    if (!saved) return;
     verificarGestor(saved).then(() => { if (alive) setAuthenticated(true); }).catch((cause) => { if (alive) { clearGestorSenha(); setLoginError(cause); } }).finally(() => { if (alive) setCheckingAccess(false); });
     return () => { alive = false; };
   }, []);
@@ -72,7 +72,7 @@ function ManagerContent() {
     catch (cause) { setLoginError(cause); }
     finally { setLoginBusy(false); }
   }
-  function logout(cause?: unknown) { if (MOCK_MODE) { clearGestorSenha(); router.push('/dashboard'); return; } clearGestorSenha(); setAuthenticated(false); setPassword(''); setLoginError(cause ?? null); }
+  function logout(cause?: unknown) { if (MOCK_MODE) { clearGestorSenha(); router.push('/dashboard'); return; } if (!cause) { void logoutAccount().then(() => { clearGestorSenha(); window.location.assign('/login'); }).catch(setLoginError); return; } clearGestorSenha(); setAuthenticated(false); setPassword(''); setLoginError(cause); }
 
   return <main className="container page-content manager-page"><PageHeader showRoleSwitch title={authenticated ? 'Gestão das regras' : 'Área do gestor'} description={authenticated ? 'Edite com segurança. Confira o impacto antes de publicar.' : 'Gerencie as regras do fundo, confira o impacto de uma alteração e publique novas versões.'} />
     {initialError ? <div style={{ marginBottom: 20 }}><RequestFeedback cause={initialError} /><Button variant="outline" size="small" style={{ marginTop: 12 }} onClick={() => { setInitialError(null); setLoadAttempt((value) => value + 1); }}><RefreshCw size={14} />Tentar carregar novamente</Button></div> : null}

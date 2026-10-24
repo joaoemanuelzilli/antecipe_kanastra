@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { ChevronDown, LoaderCircle, Search, SlidersHorizontal, X } from 'lucide-react';
-import { getLote, lotesLocais } from '@/api/client';
+import { useLotHistory } from '@/api/lot-history';
+import { getLote, MOCK_MODE } from '@/api/client';
 import { countBR } from '@/lib/format';
 import { filterLots, LOT_SORT_LABELS, LOT_STATUS_LABELS, type LotSort, type LotStatusFilter } from '@/lib/lot-filters';
 import { LotCard } from './lot-card';
@@ -10,7 +11,8 @@ import { PageHeader } from './page-header';
 import './lots-page.css';
 
 export function LotsPage() {
-  const [localLots] = useState(lotesLocais);
+  const history = useLotHistory();
+  const localLots = history.data ?? [];
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<LotStatusFilter>('todos');
   const [dataBase, setDataBase] = useState('');
@@ -39,6 +41,8 @@ export function LotsPage() {
 
   return <main className="container page-content lots-page">
     <PageHeader title="Meus lotes" description="Acompanhe suas análises e consulte os detalhes de cada nota." />
+    {history.error && <p role="alert">Não foi possível carregar seus lotes <button className="text-link" onClick={() => { void history.refetch(); }}>Tentar novamente</button></p>}
+    {history.isPending && <p role="status">Carregando seus lotes…</p>}
     <div className="lots-overview">
       <p className="lots-total">{countBR(localLots.length)} {localLots.length === 1 ? 'lote no histórico' : 'lotes no histórico'}</p>
       <NewLotLink />
@@ -66,8 +70,8 @@ export function LotsPage() {
         {hasFilters ? <button className="lots-clear" type="button" onClick={clearFilters}><X size={16} aria-hidden="true" />Limpar filtros</button> : null}
       </div>
       {hasFilters && unavailable.length ? <div className="lots-summary-warning"><p>{unavailable.length === 1 ? 'O resumo de 1 lote está indisponível.' : `Os resumos de ${countBR(unavailable.length)} lotes estão indisponíveis.`} Alguns resultados podem não aparecer nos filtros.</p><button className="lots-clear" type="button" disabled={unavailable.some(entry => entry.result.isFetching)} onClick={() => { void Promise.allSettled(unavailable.map(entry => entry.result.refetch())); }}>{unavailable.some(entry => entry.result.isFetching) ? 'Consultando resumos…' : 'Consultar resumos novamente'}</button></div> : null}
-      {entries.length ? <section className="lots-card-grid" aria-label="Lotes enviados neste navegador">{entries.map(({ local, lot, loading, error, result }) => <LotCard key={local.id} local={local} lot={lot} loading={loading} error={error} onRetry={() => { void result.refetch(); }} />)}</section> : <section className="lots-empty-result">{pending ? <><LoaderCircle size={28} className="spin" aria-hidden="true" /><h2>Consultando seus lotes</h2><p>Estamos carregando os resumos para aplicar os filtros.</p></> : <><Search size={28} aria-hidden="true" /><h2>{unavailable.length ? 'Sem resultados disponíveis' : 'Nenhum lote encontrado'}</h2><p>{unavailable.length ? 'Consulte os resumos indisponíveis ou ajuste os filtros.' : 'Tente outro nome ou ajuste os filtros.'}</p><button className="lots-clear" type="button" onClick={clearFilters}>Limpar filtros</button></>}</section>}
-    </> : <section className="lots-first-empty"><img src="/figma/mascot-empty-box.png" width="110" height="124" alt="" /><h2>Seu primeiro lote começa aqui</h2><p>Faça um novo envio ou use o lote de exemplo para conhecer o processo.</p></section>}
-    <p className="lots-history-note">Histórico dos últimos 100 envios feitos neste navegador.</p>
+      {entries.length ? <section className="lots-card-grid" aria-label={MOCK_MODE ? "Lotes enviados neste navegador" : "Lotes da sua conta"}>{entries.map(({ local, lot, loading, error, result }) => <LotCard key={local.id} local={local} lot={lot} loading={loading} error={error} onRetry={() => { void result.refetch(); }} />)}</section> : <section className="lots-empty-result">{pending ? <><LoaderCircle size={28} className="spin" aria-hidden="true" /><h2>Consultando seus lotes</h2><p>Estamos carregando os resumos para aplicar os filtros.</p></> : <><Search size={28} aria-hidden="true" /><h2>{unavailable.length ? 'Sem resultados disponíveis' : 'Nenhum lote encontrado'}</h2><p>{unavailable.length ? 'Consulte os resumos indisponíveis ou ajuste os filtros.' : 'Tente outro nome ou ajuste os filtros.'}</p><button className="lots-clear" type="button" onClick={clearFilters}>Limpar filtros</button></>}</section>}
+    </> : <section className="lots-first-empty"><img src="/figma/mascot-empty-box-transparent.png" width="110" height="124" alt="" /><h2>Seu primeiro lote começa aqui</h2><p>Faça um novo envio ou use o lote de exemplo para conhecer o processo.</p></section>}
+    <p className="lots-history-note">Histórico dos lotes disponíveis neste acesso</p>
   </main>;
 }

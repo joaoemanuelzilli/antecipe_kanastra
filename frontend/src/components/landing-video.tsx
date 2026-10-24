@@ -53,15 +53,15 @@ export function LandingVideo() {
   }
 
   return <section className="lp-video-section lp-section" id="apresentacao" aria-labelledby="lp-video-title">
-    <div className="lp-video-heading"><h2 id="lp-video-title">Veja o Antecipe em ação.</h2><p>Do envio à decisão, em menos de um minuto.</p></div>
+    <div className="lp-video-heading"><h2 id="lp-video-title">Veja o Antecipe em ação</h2><p>Do envio à decisão, em menos de um minuto</p></div>
     <div className="lp-video-player">
       <video ref={video} controls muted playsInline preload="none" poster="/media/antecipe-apresentacao.jpg" width="1920" height="1080" aria-label="Apresentação do Antecipe" aria-describedby="lp-video-caption" onPlay={() => setStarted(true)} onError={() => setError(true)}>
         <source src="/media/antecipe-apresentacao.mp4" type="video/mp4" />
-        Seu navegador não reproduz este vídeo. <a href="/media/antecipe-apresentacao.mp4">Abrir apresentação</a>.
+        Seu navegador não reproduz este vídeo — <a href="/media/antecipe-apresentacao.mp4">Abrir apresentação</a>
       </video>
       {!started && !error && <button type="button" className="lp-video-play" onClick={() => { void play(); }} aria-label="Reproduzir apresentação do Antecipe"><Play size={28} fill="currentColor" aria-hidden="true" /><span>Assistir vídeo <small>0:49</small></span></button>}
     </div>
-    <p className="lp-video-caption" id="lp-video-caption">Apresentação com dados ilustrativos.</p>
-    {error && <p className="lp-video-error" role="alert">Não foi possível reproduzir o vídeo. <a href="/media/antecipe-apresentacao.mp4" download>Baixar para assistir</a>.</p>}
+    <p className="lp-video-caption" id="lp-video-caption">Apresentação com dados ilustrativos</p>
+    {error && <p className="lp-video-error" role="alert">Não foi possível reproduzir o vídeo — <a href="/media/antecipe-apresentacao.mp4" download>Baixar para assistir</a></p>}
   </section>;
 }

@@ -1,0 +1,91 @@
+/* The theme button sits in a separate footer below the desktop menu. */
+.rail-footer{position:fixed;left:24px;bottom:24px;width:82px;display:flex;justify-content:center;z-index:21}
+.theme-toggle{display:grid;place-items:center;width:48px;height:48px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:#004639;box-shadow:0 4px 16px #003b2909;transition:background .25s,color .25s,box-shadow .25s,transform .2s}
+.theme-toggle:hover{background:var(--blue-soft);box-shadow:0 4px 20px #003b2918;transform:translateY(-2px)}
+.theme-toggle:active{transform:scale(.92)}
+.theme-toggle-icons{position:relative;display:block;width:22px;height:22px}
+.theme-toggle-icons svg{position:absolute;inset:0;transition:transform .45s cubic-bezier(.34,1.56,.64,1),opacity .25s}
+.theme-sun{opacity:1;transform:rotate(0) scale(1)}
+.theme-moon{opacity:0;transform:rotate(-90deg) scale(.4)}
+.theme-toggle[data-dark=true]{color:#a6efc8}
+.theme-toggle[data-dark=true] .theme-sun{opacity:0;transform:rotate(90deg) scale(.4)}
+.theme-toggle[data-dark=true] .theme-moon{opacity:1;transform:rotate(0) scale(1)}
+@media(min-width:761px){.rail-inner{gap:40px}.app-rail{max-height:calc(100dvh - 160px)}.rail-inner{max-height:inherit}}
+@media(max-height:600px) and (min-width:761px){.rail-inner{gap:16px;padding-block:20px}}
+@media(max-width:760px){
+  .rail-footer{left:auto;right:8px;bottom:calc(14px + env(safe-area-inset-bottom));width:calc((100% - 16px)/4);z-index:41}
+  .theme-toggle{width:48px;height:48px;background:transparent;box-shadow:none;border-color:transparent}
+}
+@media(prefers-reduced-motion:reduce){.theme-toggle,.theme-toggle-icons svg{transition:none}}
+html[data-profile-reduced-motion=true] .theme-toggle,html[data-profile-reduced-motion=true] .theme-toggle-icons svg{transition:none}
+
+:root{color-scheme:light}
+:root[data-theme=dark]:not(:has(.demo-login-page)){
+  color-scheme:dark;
+  --bg:#101815;--surface:#19251f;--ink:#edf5ef;--muted:#a6b8ad;--line:#35483d;
+  --blue:#7ee2ad;--blue-hover:#a6efc8;--blue-soft:#223d30;
+  --green:#7ee2ad;--green-soft:#223d30;--red:#ffaaaa;--red-soft:#452b2d;
+}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.dashboard-page,.profile-page,.lots-page,.manager-page,.result-page){color:var(--ink)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.rail-inner,.mobile-app-header,.dashboard-hero,.dashboard-lot-card,.dashboard-chart,.profile-identity,.profile-panel,.panel,.role-switch,.input,.profile-input,.lots-control,.dialog-content,.sheet-content,.new-lot-dialog,.document-loading-panel,.assistant-chat,.assistant-chat-form,.confirmation-bar,.login-wrap,.table-footer,.notes-filter-row,.dashboard-count-total){background:var(--surface);color:var(--ink);border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.rail-link,.rail-inner .rail-link:not(.active)){background:var(--surface);color:var(--blue);border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.rail-link.active,.rail-nav .rail-link.active){background:#004639;color:#fff;border-color:#37755c}
+html[data-theme=dark]:not(:has(.demo-login-page)) .rail-link:not(.active) img{filter:brightness(0) saturate(100%) invert(87%) sepia(26%) saturate(684%) hue-rotate(89deg) brightness(95%) contrast(88%)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .rail-brand img{filter:brightness(0) invert(1)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .mobile-app-header img{filter:brightness(0) invert(1)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.role-switch a,.data-table td,.detail-line strong,.summary-secondary strong,.note-card-company,.profile-field>span:first-child){color:var(--ink)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .role-switch .selected{background:#d8f4e4;color:#10281c}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.button-outline,.pagination button,.pagination a){background:var(--surface);color:var(--blue);border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.button-outline:hover:not(:disabled),.rail-link:not(.active):hover,.icon-button:hover,.button-ghost:hover,.notes-table tbody tr:hover,.lot-row:hover,.net-chart-column:hover){background:var(--blue-soft);color:var(--ink)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.button-primary,.new-lot-submit){color:#092416}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.dashboard-section-heading>a,.dashboard-retry,.text-link,.profile-password-visibility,.profile-demo>span,.detail-button,.app-environment a:hover){color:var(--blue)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.dashboard-hero-copy p,.dashboard-lot-value,.dashboard-lot-processing,.dashboard-analytics .dashboard-section-heading>span,.dashboard-chart header p,.dashboard-chart header small,.net-chart-axis,.net-chart-label,.chart-caption,.chart-empty,.decisions-donut span,.decisions-legend>p,.analytics-coverage,.profile-identity-copy p,.profile-section-heading p,.profile-panel-copy,.profile-preference p,.profile-form-footer>p,.profile-demo p,.profile-small-note,.profile-unavailable p,.lots-results-bar,.note-card-doc,.note-card-discount,.note-card-values span,.note-card-footer,.app-environment){color:var(--muted)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.profile-avatar,.profile-section-icon,.profile-tip,.profile-notice,.guide-assurance,.file-tag,.step-number,.processing-symbol,.status-count.approved,.status-badge.approved,.dashboard-count-approved,.reason-card.approved,.calculation-box,.note-help-button,.cession-advice){background:var(--green-soft);color:var(--green);border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.profile-tip p,.profile-tip a){color:var(--blue)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.dashboard-count-rejected,.status-count.rejected,.status-badge.rejected,.reason-card,.profile-error,.feedback-error,.assistant-chat-error){background:var(--red-soft);color:var(--red);border-color:#724346}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.dashboard-lot-stale,.dashboard-lot-card.dashboard-lot-error>p,.profile-logout){color:var(--red)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.data-table th,.profile-role,.profile-device,.profile-device-badge,.technical-data,.json-view,.json-editor,.preview-block,.dialog-summary,.cession-review,.cession-breakdown,.assistant-chat-header,.assistant-chat-context,.assistant-message.assistant,.assistant-code-heading,.assistant-code-block,.assistant-suggestions button,.new-lot-example){background:#132019;color:var(--ink);border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.data-table td,.data-table th,.decisions-legend>div,.net-chart-bars,.profile-form-footer,.profile-preference,.note-card,.summary-primary,.dialog-footer,.sheet-heading,.assistant-chat-header,.assistant-chat-form,.assistant-message,.assistant-table-scroll,.cession-meta){border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.drop-zone,.drop-zone.file-selected,.file-selection){background:#172f23;border-color:#497c60;color:var(--ink)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .drop-zone.dragging{background:#224735}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.segmented,.note-status-tabs){border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.segmented button,.note-status-tabs button){color:var(--muted);border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.segmented button.selected,.note-status-tabs button.selected,.pagination .page-current){background:var(--blue-soft);color:var(--blue);border-color:#497c60}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.segmented button>span,.note-status-tabs button>span){background:#304b3b;color:var(--ink)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.input,.profile-input,.lots-control)::placeholder{color:#95a99c}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.input,.profile-input,.lots-control):focus{outline-color:#497c60;border-color:#7ee2ad}
+html[data-theme=dark]:not(:has(.demo-login-page)) .dashboard-card-caret{filter:brightness(0) invert(1)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .assistant-chat-form textarea{background:var(--surface);color:var(--ink)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .assistant-message.user{background:#224735;color:var(--ink)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .assistant-suggestions button:hover{background:var(--blue-soft)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.new-lot-form-panel,.new-lot-onboarding,.new-lot-close,.manager-page .page-actions,.manager-fund,.pricing-editor,.manager-actions,.edit-rule-row,.preview-panel,.history-row,.rules-aside){background:var(--surface);color:var(--ink);border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .new-lot-dialog{background:transparent}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.new-lot-input,.new-lot-drop-target){color:var(--ink);border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .new-lot-input::placeholder{color:var(--muted)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.new-lot-heading p,.new-lot-step-copy p,.new-lot-file small,.lots-field>span:first-child,.manager-page .page-actions>.helper,.manager-page .manager-session,.assistant-chat-header p,.assistant-chat-welcome>p,.assistant-message>strong,.assistant-chat-busy,.assistant-chat-form>p){color:var(--muted)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.new-lot-dropzone,.new-lot-drop-target:hover:not(:disabled)){background:var(--blue-soft);border-color:#497c60}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.new-lot-close>img,.new-lot-info>img,.new-lot-date>img){filter:brightness(0) invert(1)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .page-header .page-header-copy>h1{color:var(--ink)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.page-header .page-header-copy>p,.dashboard-empty p){color:var(--muted)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .role-switch a.selected{color:#10281c}
+@media(max-width:760px){
+  .rail-inner{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .rail-inner:has([aria-label="Navegação do gestor"]){grid-template-columns:1fr 1fr}
+  html[data-theme=dark]:not(:has(.demo-login-page)) .app-rail{background:var(--surface);border-color:var(--line)}
+  html[data-theme=dark]:not(:has(.demo-login-page)) .rail-inner .rail-link.active>svg{color:#fff}
+  html[data-theme=dark]:not(:has(.demo-login-page)) .rail-inner .rail-link.active img{filter:brightness(0) invert(1)}
+}
+
+/* Result rows and the current pagination component share the dark palette. */
+html[data-theme=dark]:not(:has(.demo-login-page)) .result-page .notes-table tbody tr{background:var(--surface)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .result-page .notes-table tbody tr:nth-child(even){background:#14221b}
+html[data-theme=dark]:not(:has(.demo-login-page)) .result-page .notes-table tbody tr:hover{background:var(--blue-soft)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .result-page .notes-table td:nth-child(2){color:var(--ink)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .result-page .notes-table .icon-button{color:var(--blue)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .result-pagination button,
+html[data-theme=dark]:not(:has(.demo-login-page)) .pagination-jump input{background:var(--surface);color:var(--ink);border-color:var(--line)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .result-pagination button:hover:enabled{background:var(--blue-soft);border-color:#497c60}
+html[data-theme=dark]:not(:has(.demo-login-page)) .result-pagination button.selected{background:#004639;color:#fff;border-color:#508c70}
+html[data-theme=dark]:not(:has(.demo-login-page)) .pagination-jump>button{background:var(--blue-soft);color:var(--blue)}
+html[data-theme=dark]:not(:has(.demo-login-page)) :is(.pagination-jump,.pagination-ellipsis,.result-page .notes-page-label){color:var(--muted)}
+html[data-theme=dark]:not(:has(.demo-login-page)) .pagination-jump input:focus{outline-color:#497c60;border-color:var(--blue)}

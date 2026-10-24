@@ -53,3 +53,5 @@ O export isolado do mascote vazio foi usado para conservar o recorte do Figma; a
 ### Loop de ida e volta do mascote
 
 `assistant-head-loop.mp4` é a versão usada pelo botão de ajuda:240quadros originais seguidos pelos238quadros internos em ordem inversa, a24fps (19,9167s). Os extremos não se repetem na virada nem no reinício. H.264640×360 sem áudio, faststart, cerca de383KB. A inversão fica no próprio arquivo para funcionar em navegadores sem suporte a velocidade negativa; o loop nativo e a pausa por movimento reduzido permanecem.
+
+- `mascot-empty-box-transparent.png`: versão com alpha do Figma EFdeJ9T6mnBayCJcbh60aT, nó1:1624, exportada em24/10/2026. Substitui a versão com fundo nos estados vazios de Dashboard e Meus lotes, preservando a geometria dos componentes.

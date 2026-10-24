@@ -1,11 +1,11 @@
-/** Contrato v1.1 do grupo, commit 2ada0d9. Valores monetários inteiros em centavos. */
+/** Contrato v1.5 do grupo, commit ef95af8. Valores monetários inteiros em centavos. */
 export type MetodoPreco='DESCONTO_SIMPLES'|'DESCONTO_COMPOSTO';
 export interface Precificacao {metodo:MetodoPreco;taxa_mensal_percentual:number;base_dias:number;descricao:string;fonte_metodo?:string;sobrescritos_pelo_yaml?:string[]}
 export interface Regra {codigo:string;ativo:boolean;parametros:Record<string,unknown>}
 export interface Regras {fundo:{nome:string;cnpj:string};validadores:Regra[];precificacao:{metodo:MetodoPreco;taxa_mensal_percentual:number;base_dias:number}}
 export interface ParametroCatalogo {nome:string;rotulo:string;tipo:'inteiro'|'decimal'|'lista_texto'|'opcao';unidade?:string;minimo?:number;maximo?:number;opcoes?:string[];opcional?:boolean}
 export interface RegraCatalogo {codigo:string;titulo:string;descricao:string;parametros:ParametroCatalogo[]}
-export interface Config {fundo:{nome:string;cnpj:string};data_base_padrao:string;regras_versao:number;precificacao:Precificacao;upload:{tamanho_maximo_bytes:number;separador:string;colunas:string[]}}
+export interface Config {exigir_login?:boolean;fundo:{nome:string;cnpj:string};data_base_padrao:string;regras_versao:number;precificacao:Precificacao;upload:{tamanho_maximo_bytes:number;separador:string;colunas:string[]}}
 export interface ErroDetalhe {linha?:number;campo:string;problema:string}
 export interface ApiErro {codigo:string;mensagem:string;detalhes?:ErroDetalhe[]}
 export interface Recusa {codigo:string;titulo:string;mensagem:string;acao:string;dados:Record<string,unknown>}
