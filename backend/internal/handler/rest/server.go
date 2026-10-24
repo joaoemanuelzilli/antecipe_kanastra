@@ -14,12 +14,14 @@ import (
 	"antecipe/internal/platform/observability"
 	"antecipe/internal/service/assignment"
 	"antecipe/internal/service/batch"
+	"antecipe/internal/service/rulebook"
 )
 
 // Deps do servidor HTTP.
 type Deps struct {
 	Lotes       *batch.Servico
 	Cessoes     *assignment.Servico
+	Regras      *rulebook.Servico
 	Saude       func(ctx context.Context) error
 	Metricas    http.Handler
 	Log         *slog.Logger
@@ -45,6 +47,12 @@ func NovoServidor(d Deps) http.Handler {
 	mux.HandleFunc("GET /api/lotes/{id}/notas.csv", h.baixarNotas)
 	mux.HandleFunc("POST /api/validar", h.validar)
 	mux.HandleFunc("POST /api/lotes/{id}/cessao", h.ceder)
+	mux.HandleFunc("GET /api/regras", h.obterRegras)
+	mux.HandleFunc("GET /api/regras/versoes", h.listarVersoes)
+	mux.HandleFunc("GET /api/regras/versoes/{versao}", h.obterVersao)
+	mux.HandleFunc("GET /api/gestor/verificar", h.exigeGestor(h.verificarGestor))
+	mux.HandleFunc("PUT /api/regras", h.exigeGestor(h.publicarRegras))
+	mux.HandleFunc("POST /api/regras/previa", h.exigeGestor(h.previa))
 	if d.Metricas != nil {
 		mux.Handle("GET /metrics", d.Metricas)
 	}

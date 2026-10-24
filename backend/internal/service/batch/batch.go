@@ -14,6 +14,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 
 	"antecipe/internal/domain"
+	"antecipe/internal/domain/rules"
 	"antecipe/internal/platform/apperrors"
 	"antecipe/internal/platform/config"
 	"antecipe/internal/platform/observability"
@@ -346,4 +347,13 @@ func appendInt(b []byte, n int) []byte {
 		}
 	}
 	return append(b, d[i:]...)
+}
+
+// Simular roda o motor com regras e preço quaisquer (usado pela prévia do gestor). Não grava nada.
+func (s *Servico) Simular(ctx context.Context, notas []domain.Nota, r rules.Regras, p domain.Precificacao, dataBase time.Time) (engine.Saida, error) {
+	ectx, err := s.contextoMotor(ctx, domain.VersaoRegras{Regras: r}, p, dataBase)
+	if err != nil {
+		return engine.Saida{}, err
+	}
+	return engine.Validar(notas, r, ectx), nil
 }

@@ -167,6 +167,8 @@ type LoteRepository interface {
 	ListarNotas(ctx context.Context, id string, f FiltroNotas) ([]NotaLinha, int, error)
 	PercorrerNotas(ctx context.Context, id string, f FiltroNotas, fn func(NotaLinha) error) error
 	RecuperarInterrompidos(ctx context.Context) (int, error)
+	NotasOriginais(ctx context.Context, id string) ([]Nota, error)
+	UltimoLoteConcluido(ctx context.Context) (string, error)
 }
 
 // LeitorNotas lê o arquivo enviado (o adaptador do formato CSV implementa).

@@ -32,4 +32,6 @@ type SituacaoRepository interface {
 type RegrasRepository interface {
 	Publicadas(ctx context.Context) (VersaoRegras, error)
 	Obter(ctx context.Context, numero int) (VersaoRegras, error)
+	Publicar(ctx context.Context, r rules.Regras, autor string, resumo []string) (VersaoRegras, error)
+	Listar(ctx context.Context) ([]VersaoRegras, error)
 }
