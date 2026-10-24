@@ -22,3 +22,15 @@ O visitante deve entender o fluxo e acessar a simulação. Conteúdo em sequênc
 Build, lint e53 testes aprovados. Conferência visual em1440px e360px, com todas as imagens carregadas e sem rolagem horizontal. Exercitados: dúvida expansível, abertura/fechamento por Escape de Sobre o uso, entrada demo até Novo lote e retorno ao dashboard com foco em Novo envio.
 
 Capturas locais: `output/playwright/landing-desktop.png` e `output/playwright/landing-mobile.png` na raiz do projeto. Origem dos assets em `public/figma/landing/README.md`.
+
+## Animação
+
+Movimento progressivo sem dependências: abertura com aproximação fotográfica e revelação do título; fotos e resumo em camadas; sequência dos três passos; entrada dos cards Fred; wordmark revelado no rodapé. As entradas executam uma vez por montagem via IntersectionObserver e Web Animations API, sem esconder conteúdo no CSS de repouso.
+
+A foto da padaria acompanha discretamente a rolagem somente no desktop com ponteiro preciso, com atualização limitada por requestAnimationFrame e observação de visibilidade. Sem loops contínuos. Botões, setas, Fred e abertura de dúvidas respondem à interação. Ao mudar para movimento reduzido, as animações ativas são canceladas e a foto volta ao repouso. Eventos, observadores e animações são limpos na saída da landing; abas ocultas pausam as animações.
+
+Verificado em1440px e360px, com animações de entrada ativas, teclado e troca dinâmica para movimento reduzido (zero animações e sem overflow). Build e lint aprovados.
+
+## Vídeo de apresentação
+
+Vídeo fornecido pelo usuário (`antecipe video.mp4`),48,8s,1920×1080. Inserido entre Como funciona e a seção da padaria, com atalho Assistir vídeo no hero. Reprodução por clique, som original e controles nativos; sem autoplay, com pausa ao ocultar a aba. Capa extraída aos24s e arquivo otimizado em H.264/AAC com faststart (~4,5MB contra30MB original). Assets locais em `public/media/antecipe-apresentacao.mp4` e `.jpg`. Dados exibidos no vídeo identificados como ilustrativos. Verificados reprodução real e layout em1440px e360px.

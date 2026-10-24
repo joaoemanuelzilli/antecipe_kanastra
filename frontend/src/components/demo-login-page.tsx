@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { clearGestorSenha, MOCK_MODE } from '@/api/client';
+import Link from '@/lib/link';
 import { Modal } from './ui/dialog';
 import { Button } from './ui/button';
 import './demo-login.css';
@@ -50,7 +51,7 @@ export function DemoLoginPage({ onEnter }: { onEnter?: () => void } = {}) {
 
   return <main className="demo-login-page">
     <img className="demo-login-background" src="/figma/login-background.png" alt="" aria-hidden="true" />
-    <div className="demo-login-logo"><img src="/figma/logo-white.svg" alt="Antecipe" width={296} height={48} /></div>
+    <Link href="/" className="demo-login-logo" aria-label="Antecipe — voltar à página inicial"><img src="/figma/logo-white.svg" alt="Antecipe" width={296} height={48} /></Link>
     {MOCK_MODE ? <div className="demo-login-stack">
       <section className="demo-login-card" aria-labelledby="demo-login-title">
         <header className="demo-login-intro"><h1 id="demo-login-title">Que bom te ver aqui!</h1><p>Entre na demonstração e conheça o Antecipe.</p></header>
