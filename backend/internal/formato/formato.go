@@ -92,3 +92,16 @@ func ValorCSV(centavos int64) string {
 	}
 	return sinal + strconv.FormatInt(centavos/100, 10) + "," + dois(centavos%100)
 }
+
+// CelulaCSV neutraliza fórmulas em células de texto vindas do arquivo do usuário
+// (= + - @ tab CR no início viram texto com um apóstrofo na frente), para o CSV abrir seguro no Excel.
+func CelulaCSV(s string) string {
+	if s == "" {
+		return s
+	}
+	switch s[0] {
+	case '=', '+', '-', '@', '\t', '\r':
+		return "'" + s
+	}
+	return s
+}

@@ -80,3 +80,20 @@ func TestValorCSV(t *testing.T) {
 		}
 	}
 }
+
+func TestCelulaCSV(t *testing.T) {
+	casos := map[string]string{
+		"=HYPERLINK(\"x\")": "'=HYPERLINK(\"x\")",
+		"+55 11":            "'+55 11",
+		"-cmd":              "'-cmd",
+		"@SUM(A1)":          "'@SUM(A1)",
+		"\tx":               "'\tx",
+		"LOJA AURORA LTDA":  "LOJA AURORA LTDA",
+		"":                  "",
+	}
+	for in, esperado := range casos {
+		if got := CelulaCSV(in); got != esperado {
+			t.Errorf("CelulaCSV(%q) = %q, esperado %q", in, got, esperado)
+		}
+	}
+}

@@ -62,3 +62,17 @@ func TestExemplo(t *testing.T) {
 		t.Fatal("exemplo sem a LOJA AURORA")
 	}
 }
+
+func TestValidarNaoInjetaFormula(t *testing.T) {
+	entrada := "NOME_FUNDO;DOC_FUNDO;NOME_CEDENTE;DOC_CEDENTE;NOME_SACADO;DOC_SACADO;NU_DOCUMENTO;TIPO_RECEBIVEL;VALOR_NOMINAL;DATA_VENCIMENTO_ORIGINAL;DATA_AQUISICAO\n" +
+		"ANTECIPE FIDC;92.234.400/0001-80;CED;10.062.050/0001-57;=HYPERLINK(\"http://x\");22.144.961/0001-02;1;Duplicata;1000,00;21/11/2026;\n"
+	var out, errOut bytes.Buffer
+	args := []string{"validar", "--regras", dados + "validadores_antecipe.json", "--estoque", dados + "estoque_antecipe.zip",
+		"--config", arqConfig, "--situacao", dados + "situacao_cadastral.csv"}
+	if code := run(args, strings.NewReader(entrada), &out, &errOut); code != 0 {
+		t.Fatalf("validar = %d (%s)", code, errOut.String())
+	}
+	if strings.Contains(out.String(), ";=HYPERLINK") || !strings.Contains(out.String(), "'=HYPERLINK") {
+		t.Fatalf("célula com fórmula não escapada: %s", out.String())
+	}
+}

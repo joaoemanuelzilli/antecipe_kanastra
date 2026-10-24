@@ -209,8 +209,9 @@ func escreverResultado(w io.Writer, s motor.Saida) error {
 		} else {
 			desc, liq = formato.ValorCSV(rs.DescontoCentavos), formato.ValorCSV(rs.LiquidoCentavos)
 		}
-		linha := []string{n.NomeFundo, n.DocFundo, n.NomeCedente, n.DocCedente, n.NomeSacado, n.DocSacado, n.Numero, n.Tipo,
-			valor, venc, aq, status, motivo, acao, dias, desc, liq}
+		c := formato.CelulaCSV
+		linha := []string{c(n.NomeFundo), c(n.DocFundo), c(n.NomeCedente), c(n.DocCedente), c(n.NomeSacado), c(n.DocSacado), c(n.Numero), c(n.Tipo),
+			valor, venc, aq, status, c(motivo), acao, dias, desc, liq}
 		if err := cw.Write(linha); err != nil {
 			return err
 		}
