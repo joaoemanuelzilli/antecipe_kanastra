@@ -5,7 +5,7 @@ import { useDemoProfile } from '@/lib/demo-profile';
 import { usePathname } from '@/lib/router';
 import { cx } from '@/lib/format';
 import { MOCK_MODE } from '@/api/client';
-import { Modal } from './ui/dialog';
+import { AssistantChat } from './assistant-chat';
 import { clearDemoAccess } from './demo-login-page';
 
 export function Brand() {
@@ -16,7 +16,15 @@ export function RoleSwitch() {
   return <nav className="role-switch" aria-label="Perfil de acesso"><Link href="/dashboard" className={cx(!manager && 'selected')} aria-current={!manager ? 'page' : undefined}>Usuário</Link><Link href="/gestor" className={cx(manager && 'selected')} aria-current={manager ? 'page' : undefined}>Gestor</Link></nav>;
 }
 function HelpGuide() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [question, setQuestion] = useState('');
+  const [questionRequest, setQuestionRequest] = useState(0);
+  useEffect(() => {
+    const openChat = (event: Event) => { setQuestion((event as CustomEvent<string>).detail || ''); setQuestionRequest(value => value + 1); setOpen(true); };
+    window.addEventListener('antecipe:chat-open', openChat);
+    return () => window.removeEventListener('antecipe:chat-open', openChat);
+  }, []);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { reducedMotion: userReducedMotion } = useDemoProfile();
 
@@ -43,7 +51,7 @@ function HelpGuide() {
     };
   }, [open, userReducedMotion]);
 
-  return <><button className="mascot-help" onClick={() => setOpen(true)} aria-label="Abrir ajuda sobre a antecipação"><span className="mascot-help-label">Ajuda</span><span className="mascot-help-media" aria-hidden="true"><video ref={videoRef} src="/figma/assistant-head-loop.mp4" poster="/figma/assistant-head-poster.jpg" width="100" height="100" autoPlay muted loop playsInline preload="metadata" tabIndex={-1} /></span></button><Modal open={open} onOpenChange={setOpen} title="Como podemos ajudar?" description="Um guia rápido para acompanhar suas notas."><div className="help-guide"><details open><summary>Como envio minhas notas?</summary><p>Em Novo envio, escolha um arquivo CSV e a data-base. O modelo mostra as colunas esperadas. Você também pode conhecer o fluxo com um lote de exemplo.</p><Link href="/enviar" onClick={() => setOpen(false)} className="text-link">Fazer um novo envio</Link></details><details><summary>O que acontece depois do envio?</summary><p>Acompanhe a fila e as etapas de processamento. O resultado mostra as notas aprovadas e recusadas, os valores e a explicação recebida da análise.</p></details><details><summary>Por que uma nota foi recusada?</summary><p>Abra os detalhes da nota para ver o motivo e o próximo passo. Os filtros ajudam a encontrar notas com o mesmo motivo, e você pode baixar o resultado em CSV.</p></details><details><summary>Quando a cessão é confirmada?</summary><p>Você revisa as notas aprovadas e confirma a cessão no resultado do lote. A confirmação apresenta o valor final e eventuais notas excluídas.</p><Link href="/lotes" onClick={() => setOpen(false)} className="text-link">Consultar meus lotes</Link></details><details><summary>Como atualizo meu perfil?</summary><p>Abra Meu perfil para conferir seus dados, ajustar preferências ou sair da conta.</p><Link href="/perfil" onClick={() => setOpen(false)} className="text-link">Abrir meu perfil</Link></details>{MOCK_MODE && <p className="helper">Você está em uma demonstração com dados fictícios. As confirmações não realizam operações financeiras.</p>}</div></Modal></>;
+  return <><button className="mascot-help" onClick={() => { setQuestion(''); setOpen(true); }} aria-label="Abrir chat com a IA"><span className="mascot-help-label">Fale com a IA</span><span className="mascot-help-media" aria-hidden="true"><video ref={videoRef} src="/figma/assistant-head-loop.mp4" poster="/figma/assistant-head-poster.jpg" width="100" height="100" autoPlay muted loop playsInline preload="metadata" tabIndex={-1} /></span></button><AssistantChat key={`${pathname}:${question}:${questionRequest}`} open={open} onOpenChange={setOpen} initialQuestion={question} /></>;
 }
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

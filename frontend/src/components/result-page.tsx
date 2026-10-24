@@ -6,6 +6,7 @@ import { ArrowDownUp, ArrowRight, Check, CheckCircle2, ChevronDown, ChevronLeft,
 import type { FiltrosNotas, Lote, Nota, ResultadoCessao } from '@/api/types';
 import { confirmarCessao, getLote, getNotas, nomeArquivoLote, nomeLote, notasCSVURL } from '@/api/client';
 import { dateBR, moneyCentavos } from '@/lib/format';
+import './result-refinement.css';
 import { PageHeader } from './page-header';
 import { Feedback, Loading } from './feedback';
 import { Button } from './ui/button';
