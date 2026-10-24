@@ -66,8 +66,11 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       CORS_ORIGINS: http://localhost:5173,http://localhost:3000
       AGNO_TELEMETRY: "false"
-    ports:
-      - "7777:7777"
+      # Com a chave, o AgentOS exige "Authorization: Bearer"; só o nginx (serviço web) a injeta em /ai/
+      OS_SECURITY_KEY: ${AI_SECURITY_KEY:-}
+    # sem "ports": o assistente só é alcançável pela rede interna do compose (via nginx em /ai/)
+    expose:
+      - "7777"
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,6 +80,8 @@ services:
   web:
     restart: unless-stopped
     build: ./frontend
+    environment:
+      AI_SECURITY_KEY: ${AI_SECURITY_KEY:-}
     ports:
       - "3000:80"
     depends_on:

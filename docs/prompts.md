@@ -269,3 +269,34 @@ Depois disso, a IA seguiu o plano até a Tarefa 13 (12:15):
 
 **O que o time fez com a resposta:** _(preencher)_
 
+---
+
+## #10 · 24/10/2026 ~14:10 · Proteger o assistente de IA
+
+**Contexto:** a revisão de segurança automática apontou que o serviço do assistente (AgentOS) subia sem autenticação, com a porta 7777 aberta. A IA explicou o risco e sugeriu três correções.
+
+**Prompt (time → Claude Code):**
+
+> sim
+
+(aprovação para aplicar as correções 1, fechar a porta 7777, e 2, ligar a autenticação do AgentOS)
+
+**O que a IA fez:**
+
+1. **Porta fechada:** o serviço `ai` deixou de publicar a porta 7777 (`expose` em vez de `ports`) e só é alcançável pela rede interna do compose.
+2. **Autenticação ligada:**
+   - o AgentOS recebe a `OS_SECURITY_KEY` e passa a exigir `Authorization: Bearer`;
+   - a chave `AI_SECURITY_KEY` é gerada aleatoriamente pelo `make up`, que também a acrescenta em `.env` antigos;
+   - o nginx do front injeta a chave em `/ai/` via template (`frontend/templates/default.conf.template`), então ela nunca chega ao navegador.
+3. **Testes:** criou `ai/tests/test_seguranca.py`, que confere 401 sem chave ou com chave errada e 200 com a chave. Os 20 testes do serviço passam.
+4. **Verificação no Docker:**
+   - porta 7777 sem conexão no host;
+   - 401 direto na rede interna sem a chave;
+   - 200 pelo nginx;
+   - chave ausente das respostas públicas.
+5. **Documentação:** atualizou README, `ai/README.md` e `docs/api.md`. Em dev, o proxy do Vite `/ai` passa a apontar para `http://localhost:3000`.
+
+A correção 3 (separar as conversas por usuário) não foi aplicada, porque não foi pedida.
+
+**O que o time fez com a resposta:** _(preencher)_
+

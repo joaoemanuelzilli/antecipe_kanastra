@@ -5,7 +5,7 @@ Agente [Agno](https://docs.agno.com) servido pelo **AgentOS**, que responde em l
 > "Como foi o processamento do lote?" · "Por que a nota 725714 deu erro?" · "Quantas notas foram recusadas?" · "Qual o prazo máximo do fundo?"
 
 ```
-painel (React) ──► nginx /ai/ ──► AgentOS :7777 ──► agente ──► OpenRouter (modelo)
+painel (React) ──► nginx /ai/ (injeta a chave) ──► AgentOS :7777 (rede interna, exige Bearer) ──► agente ──► OpenRouter (modelo)
                                         │              │
                                         │              └─► ferramentas ──► API do Antecipe :8080 (só GET)
                                         └─► sessões do chat no Postgres (schema "ai")
@@ -53,11 +53,11 @@ No `make up` tudo isso vem do `docker-compose.yml` e do `.env`. Basta preencher 
 
 ## Contrato para o painel (front)
 
-Pelo nginx, o front chama `/ai/...` na mesma origem. Em dev, configure o proxy do Vite:
+Pelo nginx, o front chama `/ai/...` na mesma origem, **sem chave nenhuma**. O nginx acrescenta `Authorization: Bearer <AI_SECURITY_KEY>` e o AgentOS recusa (401) qualquer chamada sem ela. A porta 7777 não é publicada no host. Em dev, aponte o proxy do Vite para o nginx do `make up`:
 
 ```ts
 // vite.config.ts → server.proxy
-"/ai": { target: "http://localhost:7777", rewrite: (p) => p.replace(/^\/ai/, "") },
+"/ai": { target: "http://localhost:3000" },
 ```
 
 **1. Mostrar ou esconder o painel:** `GET /ai/assistente/status`
@@ -116,7 +116,7 @@ for (;;) {
 }
 ```
 
-A documentação interativa do AgentOS fica em `http://localhost:7777/docs`.
+A documentação interativa do AgentOS fica em `http://localhost:3000/ai/docs` (pelo nginx).
 
 ## Decisões
 

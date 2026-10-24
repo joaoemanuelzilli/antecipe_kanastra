@@ -18,8 +18,11 @@ server {
     }
 
     # Assistente de IA: /ai/agents/antecipe-assistente/runs → AgentOS. Sem buffer para o streaming (SSE).
+    # O AgentOS exige a chave (OS_SECURITY_KEY). Só o nginx a conhece e a injeta aqui:
+    # ela nunca chega ao navegador, e a porta 7777 não é publicada no host.
     location /ai/ {
         proxy_pass http://ai:7777/;
+        proxy_set_header Authorization "Bearer ${AI_SECURITY_KEY}";
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Request-Id $request_id;

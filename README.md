@@ -34,7 +34,7 @@ No fim ele mostra:
   API:              http://localhost:8080/api/saude
   Traces (Jaeger):  http://localhost:16686
   Métricas:         http://localhost:8080/metrics
-  Assistente (IA):  http://localhost:7777/docs
+  Assistente (IA):  http://localhost:3000/ai/docs  (protegido por chave; só via nginx)
   Senha do gestor:  <gerada no .env>
 ```
 
@@ -157,7 +157,7 @@ Um painel no canto direito da plataforma onde a empresa pergunta em linguagem na
 
 > "Como foi o processamento deste lote?" · "Por que a nota 725714 foi recusada?" · "Quantas notas foram recusadas por prazo?"
 
-É um serviço à parte (`ai/`), feito com [Agno](https://docs.agno.com) e servido pelo **AgentOS** na porta 7777. O modelo vem do **OpenRouter** (padrão `deepseek/deepseek-v4-flash`). O assistente **só consulta a API do Antecipe**, como o front: não lê as tabelas do backend, não envia lotes, não confirma cessões e não muda regras. Ele repete os textos oficiais de recusa da API, então tela, API e assistente dizem a mesma coisa.
+É um serviço à parte (`ai/`), feito com [Agno](https://docs.agno.com) e servido pelo **AgentOS**. O AgentOS **não fica exposto no host**: só o nginx alcança o serviço, pela rede interna do compose, e ele exige a chave `AI_SECURITY_KEY` (gerada pelo `make up` no `.env`). O nginx injeta a chave em `/ai/`, então ela nunca chega ao navegador. O modelo vem do **OpenRouter** (padrão `deepseek/deepseek-v4-flash`). O assistente **só consulta a API do Antecipe**, como o front: não lê as tabelas do backend, não envia lotes, não confirma cessões e não muda regras. Ele repete os textos oficiais de recusa da API, então tela, API e assistente dizem a mesma coisa.
 
 Para ligar, preencha a linha `OPENROUTER_API_KEY=` do `.env` com a sua chave e rode `make up` de novo.
 
@@ -166,7 +166,7 @@ Para ligar, preencha a linha `OPENROUTER_API_KEY=` do `.env` com a sua chave e r
 curl -F 'message=Quantas notas foram recusadas e por quê?' \
      -F 'session_id=demo' -F 'stream=false' \
      -F 'dependencies={"lote_id":"<id do lote>"}' \
-     http://localhost:7777/agents/antecipe-assistente/runs
+     http://localhost:3000/ai/agents/antecipe-assistente/runs
 ```
 
 Contrato para o front, ferramentas e decisões: [`ai/README.md`](ai/README.md).

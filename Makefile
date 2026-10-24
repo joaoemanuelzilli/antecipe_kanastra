@@ -13,10 +13,12 @@ ajuda: ## Mostra os comandos
 	@cp .env.example .env
 	@sed -i.bak "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')/" .env
 	@sed -i.bak "s/^GESTOR_SENHA=.*/GESTOR_SENHA=$$(head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')/" .env
+	@sed -i.bak "s/^AI_SECURITY_KEY=.*/AI_SECURITY_KEY=$$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')/" .env
 	@rm -f .env.bak
 	@echo "Criei o .env com senhas aleatórias (ele não vai para o git)."
 
 up: .env ## Sobe Postgres, API e front (primeira vez: alguns minutos)
+	@grep -qE '^AI_SECURITY_KEY=.+' .env || echo "AI_SECURITY_KEY=$$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')" >> .env
 	docker compose up --build -d
 	@echo "Esperando a API ficar pronta..."
 	@for i in $$(seq 1 90); do \
@@ -29,7 +31,7 @@ up: .env ## Sobe Postgres, API e front (primeira vez: alguns minutos)
 	@echo "  API:              http://localhost:8080/api/saude"
 	@echo "  Traces (Jaeger):  http://localhost:16686"
 	@echo "  Métricas:         http://localhost:8080/metrics"
-	@echo "  Assistente (IA):  http://localhost:7777/docs"
+	@echo "  Assistente (IA):  http://localhost:3000/ai/docs  (protegido por chave; só via nginx)"
 	@echo "  Senha do gestor:  $$(grep '^GESTOR_SENHA=' .env | cut -d= -f2)"
 	@echo ""
 	@grep -qE '^OPENROUTER_API_KEY=.+' .env || { echo "  Assistente de IA desligado: coloque OPENROUTER_API_KEY no .env e rode make up de novo."; echo ""; }

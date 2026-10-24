@@ -500,7 +500,7 @@ Sugestão de UI: ícone + texto em todo status (nunca só cor), filtro por motiv
 
 ## Assistente de IA (serviço `ai`, fora desta API)
 
-O painel do assistente fala com outro serviço: o AgentOS na porta 7777, que o nginx expõe em `/ai/`. O contrato completo, com exemplo de streaming, está em [`ai/README.md`](../ai/README.md). Em resumo:
+O painel do assistente fala com outro serviço: o AgentOS, que **só o nginx alcança** e que é exposto em `/ai/`. O AgentOS exige uma chave interna, e o nginx a injeta; o front não manda chave nenhuma. O contrato completo, com exemplo de streaming, está em [`ai/README.md`](../ai/README.md). Em resumo:
 
 - `GET /ai/assistente/status` → `{"disponivel": true, "agente_id": "antecipe-assistente", "modelo": "…"}`. Com `disponivel: false` (sem chave configurada), mostre o painel como indisponível.
 - `POST /ai/agents/antecipe-assistente/runs` (`multipart/form-data`) com os campos:
@@ -510,7 +510,7 @@ O painel do assistente fala com outro serviço: o AgentOS na porta 7777, que o n
   - `stream`: `true` para SSE (eventos `RunContent`, `RunCompleted`, `RunError`) ou `false` para JSON.
 - **Erro do modelo vem com HTTP 200:** confira `"status": "ERROR"` (ou o evento `RunError`) antes de mostrar o `content`, que nesse caso é técnico.
 - A resposta vem em **markdown**. O assistente só consulta esta API, então os textos de recusa que ele cita são os mesmos daqui.
-- Em dev, configure o proxy do Vite `/ai` → `http://localhost:7777`, removendo o prefixo `/ai`.
+- Em dev, configure o proxy do Vite `/ai` → `http://localhost:3000` (o nginx do `make up`). A porta 7777 não fica mais aberta no host.
 
 ---
 
