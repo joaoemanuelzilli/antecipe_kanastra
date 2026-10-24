@@ -24,3 +24,25 @@ describe('contrato do assistente', () => {
     await expect(assistantStatus()).rejects.toThrow('indisponível'); await expect(askAssistant('Oi', 'sessao')).rejects.toThrow('Não consegui responder');
   });
 });
+
+describe('streaming AgentOS', () => {
+  function streamed(chunks: string[]) {
+    const encoder = new TextEncoder();
+    return new Response(new ReadableStream({ start(controller) { for (const chunk of chunks) controller.enqueue(encoder.encode(chunk)); controller.close(); } }), { headers: { 'Content-Type': 'text/event-stream' } });
+  }
+  it('monta conteúdo separado em chunks e conserva sessão e lote', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(streamed(['event: RunContent\r', '\ndata: {"content":"Olá "}\r\n\r', '\nevent: RunContent\ndata: {"content":"mundo"}\n\nevent: RunCompleted\ndata: {}\n\n']));
+    vi.stubGlobal('fetch', fetchMock); const progress = vi.fn();
+    expect(await askAssistant('Oi', 'sessao-2', 'lote-2', undefined, progress)).toBe('Olá mundo');
+    expect(progress.mock.calls.map(call => call[0])).toEqual(['Olá ', 'Olá mundo']);
+    expect(fetchMock.mock.calls[0][1].body.get('stream')).toBe('true');
+  });
+  it('recusa erro do modelo depois de conteúdo parcial sem expor detalhes', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(streamed(['event: RunContent\ndata: {"content":"Parcial"}\n\nevent: RunError\ndata: {"content":"private model error"}\n\n'])));
+    await expect(askAssistant('Oi', 's', undefined, undefined, vi.fn())).rejects.toThrow('Não consegui responder agora. Tente novamente.');
+  });
+  it('não aceita conexão interrompida como resposta concluída', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(streamed(['event: RunContent\ndata: {"content":"Parcial"}\n\n'])));
+    await expect(askAssistant('Oi', 's', undefined, undefined, vi.fn())).rejects.toThrow('Não consegui responder');
+  });
+});
