@@ -49,12 +49,36 @@ func (r *Repo) CriarUsuario(ctx context.Context, n domain.NovoUsuario) (domain.U
 	return u, err
 }
 
-// GarantirGestor cria o gestor (ou atualiza a senha e o perfil dele): o .env é a fonte da verdade.
+// GarantirGestor cria o gestor do .env ou troca a senha dele, encerrando as sessões abertas.
+// Nunca promove uma conta de empresa: se o e-mail for de uma empresa, devolve erro e não mexe em nada.
 func (r *Repo) GarantirGestor(ctx context.Context, n domain.NovoUsuario) error {
-	_, err := r.Pool.Exec(ctx, `
+	tx, err := r.Pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background()) //nolint:errcheck
+	var id string
+	err = tx.QueryRow(ctx, `
 		INSERT INTO usuarios (email, nome, perfil, senha_hash) VALUES ($1, $2, 'gestor', $3)
-		ON CONFLICT (email) DO UPDATE SET senha_hash = EXCLUDED.senha_hash, perfil = 'gestor'`,
-		n.Email, n.Nome, n.SenhaHash)
+		ON CONFLICT (email) DO UPDATE SET senha_hash = EXCLUDED.senha_hash WHERE usuarios.perfil = 'gestor'
+		RETURNING id`, n.Email, n.Nome, n.SenhaHash).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return errors.New("o GESTOR_EMAIL pertence a uma conta de empresa; escolha outro e-mail para o gestor")
+	}
+	if err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM sessoes WHERE usuario_id = $1`, id); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+// DesativarGestor tranca a conta do gestor do .env (senha impossível) e encerra as sessões dela.
+func (r *Repo) DesativarGestor(ctx context.Context, email string) error {
+	_, err := r.Pool.Exec(ctx, `
+		WITH g AS (UPDATE usuarios SET senha_hash = '!' WHERE email = $1 AND perfil = 'gestor' RETURNING id)
+		DELETE FROM sessoes WHERE usuario_id IN (SELECT id FROM g)`, email)
 	return err
 }
 

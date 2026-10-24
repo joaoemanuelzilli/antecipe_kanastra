@@ -276,3 +276,89 @@ func TestGestorSenhaLongaNaoDerrubaASubida(t *testing.T) {
 		t.Fatalf("esperava aviso sem a senha no log: %s", logs.String())
 	}
 }
+
+// eu com token (Authorization: Bearer), independente de cookie
+func (a *app) euComToken(t *testing.T, token string) (int, map[string]any) {
+	t.Helper()
+	req, _ := http.NewRequest(http.MethodGet, a.url+"/api/auth/eu", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return resp.StatusCode, lerJSON(t, resp)
+}
+
+func (a *app) loginToken(t *testing.T, email, senha string) (int, string) {
+	t.Helper()
+	resp, r := a.postJSON(t, navegador(t), "/api/auth/login", map[string]any{"email": email, "senha": senha})
+	tok, _ := r["token"].(string)
+	return resp.StatusCode, tok
+}
+
+// Uma conta de empresa com o e-mail que depois vira GESTOR_EMAIL não pode ser promovida a gestor.
+func TestGestorEmailDeEmpresaNaoViraGestor(t *testing.T) {
+	amb := ambiente(t)
+	resetar(t, amb.DatabaseURL)
+	a := iniciar(t, amb, nil)
+	if resp, _ := a.postJSON(t, navegador(t), "/api/auth/cadastro", cadastro("chefe@fundo.com")); resp.StatusCode != http.StatusCreated {
+		t.Fatalf("cadastro = %d", resp.StatusCode)
+	}
+	_, tok := a.loginToken(t, "chefe@fundo.com", "senha-forte-123")
+
+	amb.GestorEmail = "chefe@fundo.com"
+	b := iniciar(t, amb, nil) // sobe mesmo assim
+	if st, eu := b.euComToken(t, tok); st != 200 || eu["usuario"].(map[string]any)["perfil"] != "empresa" {
+		t.Fatalf("sessão da empresa depois da troca do GESTOR_EMAIL = %d %v", st, eu)
+	}
+	if st, _ := b.loginToken(t, "chefe@fundo.com", amb.GestorSenha); st != http.StatusUnauthorized {
+		t.Fatalf("login com a senha do gestor na conta da empresa = %d", st)
+	}
+}
+
+// Com a área do gestor desligada (sem GESTOR_SENHA), ninguém se cadastra com o e-mail do gestor.
+func TestCadastroComEmailDoGestorReservado(t *testing.T) {
+	amb := ambiente(t)
+	resetar(t, amb.DatabaseURL)
+	amb.GestorSenha = ""
+	a := iniciar(t, amb, nil)
+	resp, r := a.postJSON(t, navegador(t), "/api/auth/cadastro", cadastro("Gestor@Antecipe.local"))
+	if resp.StatusCode != http.StatusConflict || r["erro"].(map[string]any)["codigo"] != "EMAIL_JA_CADASTRADO" {
+		t.Fatalf("cadastro com o e-mail do gestor = %d %v", resp.StatusCode, r)
+	}
+}
+
+// Trocar a GESTOR_SENHA encerra as sessões do gestor; tirar a senha desliga a conta.
+func TestTrocaDaSenhaDoGestorEncerraSessoes(t *testing.T) {
+	amb := ambiente(t)
+	resetar(t, amb.DatabaseURL)
+	a := iniciar(t, amb, nil)
+	_, tok := a.loginToken(t, "gestor@antecipe.local", "senha-de-teste")
+
+	b := iniciar(t, amb, nil) // mesma senha: a sessão continua
+	if st, _ := b.euComToken(t, tok); st != 200 {
+		t.Fatalf("sessão depois de reiniciar com a mesma senha = %d", st)
+	}
+
+	amb.GestorSenha = "senha-nova-456"
+	c := iniciar(t, amb, nil)
+	if st, _ := c.euComToken(t, tok); st != http.StatusUnauthorized {
+		t.Fatalf("sessão antiga depois da troca de senha = %d", st)
+	}
+	if st, _ := c.loginToken(t, "gestor@antecipe.local", "senha-de-teste"); st != http.StatusUnauthorized {
+		t.Fatalf("senha antiga ainda entra = %d", st)
+	}
+	st, tok2 := c.loginToken(t, "gestor@antecipe.local", "senha-nova-456")
+	if st != 200 {
+		t.Fatalf("senha nova = %d", st)
+	}
+
+	amb.GestorSenha = ""
+	d := iniciar(t, amb, nil)
+	if st, _ := d.euComToken(t, tok2); st != http.StatusUnauthorized {
+		t.Fatalf("sessão do gestor depois de tirar a GESTOR_SENHA = %d", st)
+	}
+	if st, _ := d.loginToken(t, "gestor@antecipe.local", "senha-nova-456"); st != http.StatusUnauthorized {
+		t.Fatalf("gestor sem GESTOR_SENHA ainda entra = %d", st)
+	}
+}

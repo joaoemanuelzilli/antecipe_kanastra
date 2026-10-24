@@ -369,6 +369,8 @@ Há dois perfis: **`empresa`** (envia lotes e vende notas) e **`gestor`** (mexe 
 
 - A **empresa cria a própria conta** na tela de cadastro.
 - O **primeiro gestor vem do `.env`**: e-mail `GESTOR_EMAIL` (padrão `gestor@antecipe.local`) e senha `GESTOR_SENHA`. O `make up` mostra os dois no terminal. Um gestor logado cria outros gestores.
+  - O `.env` manda: trocar a `GESTOR_SENHA` encerra as sessões abertas do gestor; tirá-la desliga a conta.
+  - Ninguém se cadastra com o `GESTOR_EMAIL`, e uma conta de empresa nunca vira gestor.
 - **Login é opcional.** Sem login, tudo funciona como antes (o `curl` dos jurados continua valendo). Lote enviado sem login fica visível para quem tiver o id. Lote enviado com login é **só da conta que enviou** (e dos gestores): para os outros, `404 LOTE_NAO_ENCONTRADO`.
 - Para obrigar o login no envio, ponha `exigir_login: true` em `config/antecipe.yaml`.
 

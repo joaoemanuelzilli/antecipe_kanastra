@@ -43,6 +43,7 @@ type ItemLote struct {
 type UsuarioRepository interface {
 	CriarUsuario(ctx context.Context, n NovoUsuario) (Usuario, error)
 	GarantirGestor(ctx context.Context, n NovoUsuario) error
+	DesativarGestor(ctx context.Context, email string) error
 	CredenciaisPorEmail(ctx context.Context, email string) (Usuario, string, error) // usuário e hash da senha
 	CriarSessao(ctx context.Context, tokenHash, usuarioID string, expira time.Time) error
 	UsuarioDaSessao(ctx context.Context, tokenHash string) (Usuario, error)

@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"log/slog"
 	"regexp"
 	"strings"
@@ -28,6 +29,7 @@ var (
 	reEmail          = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
 	errCredenciais   = apperrors.Unauthorized("CREDENCIAIS_INVALIDAS", "E-mail ou senha incorretos.")
 	errNaoAutenticad = apperrors.Unauthorized("NAO_AUTENTICADO", "Entre na sua conta para continuar.")
+	errEmailEmUso    = apperrors.Conflict("EMAIL_JA_CADASTRADO", "Já existe uma conta com esse e-mail.")
 	// hash de uma senha qualquer: o login de e-mail inexistente gasta o mesmo tempo que o de senha errada
 	hashFicticio, _ = bcrypt.GenerateFromPassword([]byte("antecipe-senha-ficticia"), bcrypt.DefaultCost)
 )
@@ -35,6 +37,8 @@ var (
 type Servico struct {
 	repo domain.UsuarioRepository
 	log  *slog.Logger
+	// e-mail do gestor do .env: ninguém se cadastra com ele (definido na subida, antes de servir)
+	emailGestor string
 }
 
 func Novo(repo domain.UsuarioRepository, log *slog.Logger) *Servico {
@@ -85,6 +89,9 @@ func (s *Servico) Cadastrar(ctx context.Context, c Cadastro) (domain.Usuario, st
 	if len(ps) > 0 {
 		return domain.Usuario{}, "", erroCadastro(ps)
 	}
+	if s.emailGestor != "" && email == s.emailGestor {
+		return domain.Usuario{}, "", errEmailEmUso
+	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(c.Senha), bcrypt.DefaultCost)
 	if err != nil {
 		return domain.Usuario{}, "", err
@@ -120,10 +127,28 @@ func (s *Servico) CriarGestor(ctx context.Context, nome, email, senha string) (d
 	return u, err
 }
 
-// GarantirGestorInicial cria (ou atualiza a senha de) o gestor definido no .env.
+// GarantirGestorInicial sincroniza o gestor do .env, sempre falhando fechado:
+//   - mesma senha de antes: não mexe (as sessões continuam);
+//   - senha nova: troca e encerra as sessões abertas;
+//   - sem senha (ou senha que o bcrypt não aceita): tranca a conta e encerra as sessões;
+//   - e-mail de uma conta de empresa: recusa, sem promover ninguém.
 func (s *Servico) GarantirGestorInicial(ctx context.Context, email, senha string) error {
 	email = normalizarEmail(email)
-	if email == "" || senha == "" {
+	s.emailGestor = email
+	if email == "" {
+		return nil
+	}
+	if senha == "" {
+		return s.repo.DesativarGestor(ctx, email)
+	}
+	if len(senha) > 72 {
+		if err := s.repo.DesativarGestor(ctx, email); err != nil {
+			return err
+		}
+		return errors.New("GESTOR_SENHA passa de 72 bytes; a conta do gestor ficou desligada")
+	}
+	if u, hash, err := s.repo.CredenciaisPorEmail(ctx, email); err == nil && u.Perfil == domain.PerfilGestor &&
+		bcrypt.CompareHashAndPassword([]byte(hash), []byte(senha)) == nil {
 		return nil
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(senha), bcrypt.DefaultCost)

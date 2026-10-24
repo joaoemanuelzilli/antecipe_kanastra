@@ -588,5 +588,10 @@ Meus lotes: cards e Novo envio compartilhados com a Dashboard; busca, situação
 
 Suíte inteira verde, com o gabarito ainda 100%.
 
+Depois do commit, a revisão automática de segurança apontou duas falhas, ambas corrigidas com teste que falhou antes:
+
+- uma conta de empresa com o mesmo e-mail do `GESTOR_EMAIL` virava gestor na subida seguinte, e a sessão dela ganhava poderes de gestor. Agora a subida recusa promover, e o e-mail do gestor fica reservado no cadastro;
+- trocar ou tirar a `GESTOR_SENHA` deixava a senha antiga e as sessões abertas valendo. Agora trocar a senha encerra as sessões, e tirá-la (ou usar uma senha que o bcrypt não aceita) desliga a conta.
+
 **O que o time fez com a resposta:** _(preencher)_
 
