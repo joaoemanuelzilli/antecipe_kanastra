@@ -13,6 +13,10 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type chaveCtx struct{}
@@ -30,8 +34,21 @@ func NovoLogger(w io.Writer, nivel string) *slog.Logger {
 	default:
 		lv = slog.LevelInfo
 	}
-	return slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{Level: lv}))
+	return slog.New(comTrace{slog.NewJSONHandler(w, &slog.HandlerOptions{Level: lv})})
 }
+
+// comTrace acrescenta trace_id e span_id do OpenTelemetry a cada linha logada com contexto.
+type comTrace struct{ slog.Handler }
+
+func (h comTrace) Handle(ctx context.Context, r slog.Record) error {
+	if sc := trace.SpanContextFromContext(ctx); sc.IsValid() {
+		r.AddAttrs(slog.String("trace_id", sc.TraceID().String()), slog.String("span_id", sc.SpanID().String()))
+	}
+	return h.Handler.Handle(ctx, r)
+}
+
+func (h comTrace) WithAttrs(a []slog.Attr) slog.Handler { return comTrace{h.Handler.WithAttrs(a)} }
+func (h comTrace) WithGroup(n string) slog.Handler      { return comTrace{h.Handler.WithGroup(n)} }
 
 // RequestID devolve o id da requisição guardado no contexto, ou "".
 func RequestID(ctx context.Context) string {
@@ -44,9 +61,10 @@ func ComRequestID(ctx context.Context, id string) context.Context {
 	return context.WithValue(ctx, chaveCtx{}, id)
 }
 
-// Middleware gera (ou propaga) o X-Request-Id e registra uma linha de acesso por requisição.
+// Middleware cria um span OpenTelemetry por requisição (nomeado pela rota), gera ou propaga
+// o X-Request-Id e registra uma linha de acesso. /api/saude e /metrics não geram spans.
 func Middleware(log *slog.Logger, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	acesso := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		inicio := time.Now()
 		id := r.Header.Get("X-Request-Id")
 		if id == "" || len(id) > 64 {
@@ -62,7 +80,13 @@ func Middleware(log *slog.Logger, next http.Handler) http.Handler {
 		if rota == "" {
 			rota = "sem_rota"
 		}
-		log.Info("requisicao",
+		span := trace.SpanFromContext(r.Context())
+		span.SetName(rota)
+		if _, caminho, ok := strings.Cut(rota, " "); ok {
+			span.SetAttributes(attribute.String("http.route", caminho))
+		}
+		span.SetAttributes(attribute.String("request_id", id))
+		log.InfoContext(r.Context(), "requisicao",
 			slog.String("request_id", id),
 			slog.String("metodo", r.Method),
 			slog.String("rota", rota),
@@ -70,6 +94,8 @@ func Middleware(log *slog.Logger, next http.Handler) http.Handler {
 			slog.Int64("duracao_ms", time.Since(inicio).Milliseconds()),
 		)
 	})
+	return otelhttp.NewHandler(acesso, "http",
+		otelhttp.WithFilter(func(r *http.Request) bool { return r.URL.Path != "/api/saude" && r.URL.Path != "/metrics" }))
 }
 
 type respostaGravada struct {

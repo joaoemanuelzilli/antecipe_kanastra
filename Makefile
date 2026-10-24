@@ -27,6 +27,8 @@ up: .env ## Sobe Postgres, API e front (primeira vez: alguns minutos)
 	@echo ""
 	@echo "  Front:            http://localhost:3000"
 	@echo "  API:              http://localhost:8080/api/saude"
+	@echo "  Traces (Jaeger):  http://localhost:16686"
+	@echo "  Métricas:         http://localhost:8080/metrics"
 	@echo "  Senha do gestor:  $$(grep '^GESTOR_SENHA=' .env | cut -d= -f2)"
 	@echo ""
 

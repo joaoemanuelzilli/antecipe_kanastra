@@ -28,6 +28,8 @@ services:
       CONFIG_PATH: /app/config/antecipe.yaml
       DATA_DIR: /app/data
       CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      OTEL_SERVICE_NAME: antecipe-api
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
     volumes:
       - ./config:/app/config:ro
     ports:
@@ -35,6 +37,15 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      jaeger:
+        condition: service_started
+
+  jaeger:
+    image: jaegertracing/jaeger:2.21.0
+    ports:
+      - "16686:16686"   # interface dos traces
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
 
   web:
     build: ./frontend
