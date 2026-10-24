@@ -13,3 +13,4 @@
 @keyframes brand-gradient{from{background-position:0% 50%}to{background-position:100% 50%}}
 @media(prefers-reduced-motion:reduce){.rail-brand::after{transition:none}.rail-brand:hover::after,.rail-brand:focus-visible::after{animation:none}}
 :root[data-profile-reduced-motion=true] .rail-brand::after{transition:none;animation:none}
+.rail-nav .rail-link.active>svg{color:#fff}
