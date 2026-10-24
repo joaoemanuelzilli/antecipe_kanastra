@@ -191,3 +191,18 @@ func TestCessaoErros(t *testing.T) {
 		t.Fatalf("sem aprovadas = %d %v", resp.StatusCode, c)
 	}
 }
+
+func TestCessaoChaveDeOutroLoteNaoBloqueia(t *testing.T) {
+	a := novoApp(t)
+	_, ra := a.enviar(t, gerar(t, 60, 31), "")
+	_, rb := a.enviar(t, gerar(t, 60, 32), "")
+	idA, idB := ra["lote_id"].(string), rb["lote_id"].(string)
+	a.esperar(t, idA)
+	a.esperar(t, idB)
+	if resp, c := a.ceder(t, idA, "lote:"+idB); resp.StatusCode != http.StatusCreated {
+		t.Fatalf("cessão A = %d %v", resp.StatusCode, c)
+	}
+	if resp, c := a.ceder(t, idB, ""); resp.StatusCode != http.StatusCreated {
+		t.Fatalf("cessão B bloqueada pela chave escolhida em A = %d %v", resp.StatusCode, c)
+	}
+}

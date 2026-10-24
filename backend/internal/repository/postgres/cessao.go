@@ -34,9 +34,6 @@ func (r *Repo) Ceder(ctx context.Context, loteID, chave string, fundo domain.Fun
 	if !uuidValido(loteID) {
 		return c, nil, false, errLoteNaoEncontrado
 	}
-	if chave == "" {
-		chave = "lote:" + loteID
-	}
 	tx, err := r.Pool.Begin(ctx)
 	if err != nil {
 		return c, nil, false, err
@@ -56,12 +53,18 @@ func (r *Repo) Ceder(ctx context.Context, loteID, chave string, fundo domain.Fun
 	if existente, exc, ok, err := cessaoDoLote(ctx, tx, loteID); err != nil || ok {
 		return existente, exc, ok, err
 	}
-	var outroLote string
-	err = tx.QueryRow(ctx, `SELECT lote_id FROM cessoes WHERE idempotency_key = $1`, chave).Scan(&outroLote)
-	if err == nil {
-		return c, nil, false, errChaveReutilizada
-	} else if !errors.Is(err, pgx.ErrNoRows) {
-		return c, nil, false, err
+	// Sem header, a chave fica NULL: o UNIQUE(lote_id) já garante o replay, e o cliente não
+	// consegue ocupar uma chave gerada pelo servidor.
+	var chaveOuNulo any
+	if chave != "" {
+		chaveOuNulo = chave
+		var outroLote string
+		err = tx.QueryRow(ctx, `SELECT lote_id FROM cessoes WHERE idempotency_key = $1`, chave).Scan(&outroLote)
+		if err == nil {
+			return c, nil, false, errChaveReutilizada
+		} else if !errors.Is(err, pgx.ErrNoRows) {
+			return c, nil, false, err
+		}
 	}
 
 	aprovadas, err := aprovadasDoLote(ctx, tx, loteID)
@@ -148,7 +151,7 @@ func (r *Repo) Ceder(ctx context.Context, loteID, chave string, fundo domain.Fun
 	err = tx.QueryRow(ctx, `
 		INSERT INTO cessoes (id, lote_id, idempotency_key, notas_cedidas, face_centavos, desconto_centavos, liquido_centavos, notas_excluidas)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING confirmada_em`,
-		c.ID, loteID, chave, c.NotasCedidas, c.FaceCentavos, c.DescontoCentavos, c.LiquidoCentavos, excJS).Scan(&c.ConfirmadaEm)
+		c.ID, loteID, chaveOuNulo, c.NotasCedidas, c.FaceCentavos, c.DescontoCentavos, c.LiquidoCentavos, excJS).Scan(&c.ConfirmadaEm)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
