@@ -61,3 +61,6 @@
   .dashboard-hero .dashboard-upload-link{height:52px;min-height:52px;width:100%;border-radius:18px;font-size:14px}
 }
 @media(max-width:380px){.dashboard-hero{padding:20px}.dashboard-hero-mascot{width:90px;height:102px;right:8px;top:14px}.dashboard-hero-copy h2{padding-right:88px;font-size:23px;min-height:82px}.dashboard-hero-copy p{font-size:13px}}
+
+.mobile-app-header{display:none}
+@media(max-width:760px){.mobile-app-header{display:flex;position:fixed;inset:0 0 auto;align-items:center;height:calc(64px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 20px 0;background:#fff;border-bottom:1px solid #e6ece8;z-index:45}.mobile-app-header>a{display:inline-flex;align-items:center;min-height:44px}.mobile-app-header img{display:block;width:148px;height:24px;object-fit:contain}.app-workspace{padding-top:calc(64px + env(safe-area-inset-top))}html{scroll-padding-top:calc(84px + env(safe-area-inset-top))}}
