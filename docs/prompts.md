@@ -438,3 +438,26 @@ Meus lotes: cards e Novo envio compartilhados com a Dashboard; busca, situação
 
 **O que o time fez com a resposta:** _(preencher)_
 
+---
+
+## #16 · 24/10/2026 · Arquivo de teste com 1 milhão de linhas
+
+**Prompt (time → Claude Code):**
+
+> /home/joaoemanuel/Downloads/estoque_antecipe_100k/
+>
+> veja esse arquivo de teste e faça outro com 1 milhao de linhas para testarmos
+
+**O que a IA fez:**
+
+1. Conferiu que o arquivo é o mesmo `estoque_antecipe.csv` do Notion (mesmo SHA-256).
+2. **Criou o `scripts/lote-ampliado.sh`** (bash + awk), que monta 10 cópias do estoque: a primeira idêntica e, nas outras, `NU_DOCUMENTO` com o sufixo `-C1` a `-C9`. São 1.005.540 linhas e 196 MB, geradas em 1 s, sem chaves duplicadas. Como cada fundo cresce na mesma proporção, a concentração não muda, e o resultado esperado de cada linha é o do gabarito para a linha original.
+3. **Criou o `scripts/comparar-gabarito.py`**, que compara o `resultado.json` de um lote com o gabarito (vale para o original e para o ampliado).
+4. **Rodou o teste num banco novo, enviando pelo front (`:3000`):**
+   - upload em 0,4 s e conclusão em 14,1 s (13,5 s no servidor);
+   - pico de memória: 1,32 GB na API e 220 MB no Postgres;
+   - **974.600 linhas iguais ao gabarito, 30.940 diferentes só na situação cadastral e 0 em outras regras.**
+5. **Observou** que o andamento fica uns 7 s em "salvando 99%" enquanto o Postgres termina de gravar os índices do `COPY`. Ficou anotado como melhoria visual.
+
+**O que o time fez com a resposta:** _(preencher)_
+

@@ -9,6 +9,7 @@ A empresa sobe um CSV de notas e vê, em segundos, quais notas o fundo compra, q
 | 100 mil linhas | 16 MB | **1,0 s** |
 | 250 mil linhas | 39 MB | **2,5 s** |
 | 500 mil linhas | 77 MB | **4,9 s** |
+| **1 milhão de linhas** (1.005.540) | 196 MB | **14,1 s** (no Docker, pelo front; pico de 1,3 GB na API) |
 
 _Notebook com 16 núcleos, Postgres 18. Medido com `make carga`._
 
@@ -74,6 +75,11 @@ Outros comandos (`make` sozinho lista todos):
 
 - `data/exemplo.csv`: 23 notas, 13 aprovadas e uma recusa de cada tipo. É bom para ver as mensagens. A última nota já está no estoque: é aprovada na simulação, mas fica fora da cessão, porque não se vende a mesma nota duas vezes.
 - **O próprio estoque** (`data/estoque_antecipe.zip`, o lote de 100 mil dos jurados). O resultado bate com o gabarito oficial (veja abaixo) e pode ser baixado no mesmo formato em `GET /api/lotes/{id}/resultado.json`.
+- **1 milhão de linhas com resposta conhecida:**
+  - gere com `scripts/lote-ampliado.sh > amostras/lote_1m.csv`: são 10 cópias do estoque, e nas cópias 2 a 10 o número da nota ganha `-C1` a `-C9`;
+  - a concentração por fundo não muda, então cada linha tem a resposta do gabarito para a linha original;
+  - depois de processar, baixe o `resultado.json` e confira com `python3 scripts/comparar-gabarito.py resultado.json`;
+  - resultado medido: 974.600 linhas iguais ao gabarito, 30.940 diferentes só na situação cadastral e 0 em outras regras.
 - `make gerar N=500000`: lote grande com mistura realista, determinístico pela semente:
   - ~80% aprováveis;
   - casos de cada regra;
