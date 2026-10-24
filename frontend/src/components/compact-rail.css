@@ -1,0 +1,16 @@
+@media(min-width:421px){
+  .app-rail{top:50%;bottom:auto;transform:translateY(-50%);height:auto}
+  .rail-inner{height:auto;justify-content:flex-start;gap:72px;padding-block:40px}
+  .rail-nav{gap:12px}
+}
+@media(min-width:421px) and (max-height:450px){
+  .rail-inner{gap:14px;padding-block:16px}
+  .rail-nav{gap:8px}
+}
+.rail-brand{position:relative;isolation:isolate}
+.rail-brand::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,#00ce64 15%,#004639 40%,#83f6aa 60%,#00ce64 85%);background-size:300% 100%;mask:url('/figma/logo-mark.svg') center/contain no-repeat;-webkit-mask:url('/figma/logo-mark.svg') center/contain no-repeat;opacity:0;transition:opacity .2s ease}
+.rail-brand:hover::after,.rail-brand:focus-visible::after{opacity:1;animation:brand-gradient 1.8s ease-in-out infinite alternate}
+@keyframes brand-gradient{from{background-position:0% 50%}to{background-position:100% 50%}}
+@media(prefers-reduced-motion:reduce){.rail-brand::after{transition:none}.rail-brand:hover::after,.rail-brand:focus-visible::after{animation:none}}
+:root[data-profile-reduced-motion=true] .rail-brand::after{transition:none;animation:none}
+.rail-nav .rail-link.active>svg{color:#fff}

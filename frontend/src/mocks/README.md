@@ -12,7 +12,7 @@ Ative os mocks explicitamente no bootstrap de demonstração, aguardando `startM
 - `browser.ts`: mantém uma instância por página de `BatchInterceptor` (Fetch e XHR), com `getResponse` dos handlers MSW. `startMockWorker()` conserva o nome do bootstrap anterior, mas não registra nem inicia Service Worker. O HMR troca apenas os handlers. Uma migração remove somente a antiga inscrição `/mockServiceWorker.js` do mesmo origin; inscrições alheias são preservadas.
 - `server.ts`: exporta `server` para testes Node com `setupServer`.
 - `fixtures.ts`: exporta `gerarCSVExemplo(dataBase)`, `DEMO_PASSWORD`, catálogo e configuração.
-- Senha pública e fictícia do gestor: `demo-gestor`. Enviada em `X-Gestor-Senha`; não é uma credencial de backend.
+- A entrada do gestor na demonstração é direta, com uma transição verde de 1,9s. O marcador público e fictício `demo-gestor` é configurado automaticamente para os mocks; não é uma credencial de backend. O modo Go mantém o acesso previsto no contrato.
 - Exemplo: `/demo/exemplo.csv`. Em modo demo, `?data_base=AAAA-MM-DD` adapta os vencimentos. O arquivo público estático usa 24/10/2026.
 
 A fixture sintética possui 30 linhas: 19 aprovadas e 11 recusadas nas regras iniciais, com exemplos de todos os motivos ativos, duplicidade e uma linha com `FORMATO_INVALIDO`. Essa contagem pertence somente à demonstração, não ao `data/exemplo.csv` ou ao estoque do grupo. As linhas de prazo mínimo e concentração do cedente passam inicialmente, porque as duas regras vêm desligadas no JSON original; ligá-las no gestor demonstra os dois motivos adicionais. Notas podem ter várias recusas; os contadores do resumo usam somente a principal.

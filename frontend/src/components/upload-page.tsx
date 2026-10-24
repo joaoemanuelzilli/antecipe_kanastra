@@ -13,7 +13,7 @@ import './new-lot.css';
 
 const errorMessage = (error: unknown) => error instanceof Error ? error.message : 'Não foi possível enviar o arquivo. Tente novamente.';
 
-export function UploadPage() {
+export function UploadPage({ onDismiss }: { onDismiss?: () => void } = {}) {
   const navigate = useNavigate();
   const config = useQuery({ queryKey: ['config'], queryFn: ({ signal }) => getConfig(signal) });
   const form = useRef<HTMLFormElement>(null);
@@ -54,9 +54,10 @@ export function UploadPage() {
   useEffect(() => {
     if (!analysis || closed.current) return;
     if (analysisStatus === 'concluido' || analysisStatus === 'erro') {
+      onDismiss?.();
       navigate(`/lote/${analysis.id}${analysis.replay ? '?replay=1' : ''}`);
     }
-  }, [analysis, analysisStatus, navigate]);
+  }, [analysis, analysisStatus, navigate, onDismiss]);
 
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; controller.current?.abort(); }; }, []);
 
@@ -73,8 +74,13 @@ export function UploadPage() {
     closed.current = true;
     controller.current?.abort();
     setOpen(false);
-    navigate('/dashboard');
-    restoreDashboardFocus();
+    if (onDismiss) {
+      onDismiss();
+      window.requestAnimationFrame(() => previousFocus.current?.focus({ preventScroll: true }));
+    } else {
+      navigate('/dashboard');
+      restoreDashboardFocus();
+    }
   }
   function selectFile(selected?: File) {
     setError(''); setParseErrors([]);
