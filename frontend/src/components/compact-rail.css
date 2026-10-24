@@ -1,0 +1,9 @@
+@media(min-width:421px){
+  .app-rail{top:50%;bottom:auto;transform:translateY(-50%);height:auto}
+  .rail-inner{height:auto;justify-content:flex-start;gap:28px;padding-block:24px}
+  .rail-nav{gap:12px}
+}
+@media(min-width:421px) and (max-height:450px){
+  .rail-inner{gap:14px;padding-block:16px}
+  .rail-nav{gap:8px}
+}

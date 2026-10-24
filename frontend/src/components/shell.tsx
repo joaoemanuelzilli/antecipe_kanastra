@@ -5,6 +5,7 @@ import { useDemoProfile } from '@/lib/demo-profile';
 import { usePathname } from '@/lib/router';
 import { cx } from '@/lib/format';
 import { MOCK_MODE } from '@/api/client';
+import './compact-rail.css';
 import { AssistantChat } from './assistant-chat';
 import { clearDemoAccess } from './demo-login-page';
 
