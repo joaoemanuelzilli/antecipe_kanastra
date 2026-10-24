@@ -24,3 +24,5 @@
 
 - Assistente: robô abre `AssistantChat`, painel com sugestões por contexto, conversa e nova sessão. Conexão real em `/ai`, inclusive quando lotes usam mocks. Consulta status antes do envio; nunca substitui falha por resposta fictícia. POST multipart com session_id, dependencies.lote_id e stream=false. Tratar ERROR em HTTP200 sem expor conteúdo técnico. Markdown sem HTML. Chaves apenas no nginx. Proxy Vite AI_PROXY_TARGET padrão localhost:3000 (nginx do grupo).
 - Resultado: result-refinement.css amplia leitura e controles, preservando grade/Parkinsans/verde. Confirmação inline sem sobrepor robô; nota prioriza motivo e ação, depois dados e atalho contextual ao chat.
+
+- Mobile: `src/mobile.css` é importado após App para consolidar os ajustes até760px. Navegação inferior com rótulos e safe-area, áreas de toque de44px+, inputs16px para evitar zoom no iOS, cartões de notas, paginação API, chat e envio em tela cheia. Não ocultar controles para corrigir overflow; JSON/tabelas técnicas mantêm rolagem local. Validar360px e767px. Markdown do chat carregado sob demanda.
