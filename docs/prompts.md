@@ -215,7 +215,12 @@ Depois disso, a IA seguiu o plano até a Tarefa 13 (12:15):
 
 > rodei esses comandos q vc pediu do sudo
 
-**O que a IA fez:** passou a validar o `make up` com Docker (build das imagens, subida de Postgres, API, Jaeger e front, semente do estoque) e depois o caminho completo num clone limpo do repositório, como o jurado faria.
+**O que a IA fez:** validou o `make up` com Docker e o caminho completo num clone limpo do GitHub, como o jurado faria.
+- **Clone limpo:** subiu tudo, gerou o `.env` sozinho e carregou a semente de 100.554 notas. O exemplo processou certo.
+- **Front:** o upload pelo nginx do front (`:3000`), o andamento e a cessão funcionaram.
+- **Observabilidade:** traces apareceram no Jaeger e as métricas em `/metrics`. Os logs do container saíram sem nenhum dado do CSV.
+- **Carga:** `make carga` no Docker fez 500 mil linhas em 7,1 s.
+- **Scripts:** corrigiu o `demo-concorrencia.sh`, que caía quando uma cessão não tinha duplicatas e repetia os mesmos lotes a cada execução. Também silenciou as mensagens do Docker no `carga.sh`.
 
 **O que o time fez com a resposta:** _(preencher)_
 
