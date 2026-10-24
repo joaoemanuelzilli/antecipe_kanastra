@@ -91,6 +91,7 @@ type Lote struct {
 	ConcluidoEm       *time.Time
 	DuracaoMs         *int
 	Cessao            *Cessao
+	UsuarioID         string // vazio = lote enviado sem login
 }
 
 // Cessao é a venda confirmada das notas aprovadas de um lote.
@@ -113,6 +114,7 @@ type NovoLote struct {
 	RegrasVersao   int
 	Precificacao   Precificacao
 	LinhasTotal    int
+	UsuarioID      string // vazio = envio anônimo
 }
 
 // LoteCriado é o resultado de CriarLote: o lote novo ou o que já existia com a mesma chave.

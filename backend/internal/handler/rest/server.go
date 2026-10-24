@@ -11,8 +11,10 @@ import (
 	"slices"
 
 	"antecipe/internal/platform/apperrors"
+	"antecipe/internal/platform/config"
 	"antecipe/internal/platform/observability"
 	"antecipe/internal/service/assignment"
+	"antecipe/internal/service/auth"
 	"antecipe/internal/service/batch"
 	"antecipe/internal/service/rulebook"
 )
@@ -22,6 +24,8 @@ type Deps struct {
 	Lotes       *batch.Servico
 	Cessoes     *assignment.Servico
 	Regras      *rulebook.Servico
+	Auth        *auth.Servico
+	Config      *config.Atual
 	Saude       func(ctx context.Context) error
 	Metricas    http.Handler
 	Log         *slog.Logger
@@ -41,6 +45,12 @@ func NovoServidor(d Deps) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/saude", h.saude)
 	mux.HandleFunc("GET /api/config", h.config)
+	mux.HandleFunc("POST /api/auth/cadastro", h.cadastrar)
+	mux.HandleFunc("POST /api/auth/login", h.entrar)
+	mux.HandleFunc("POST /api/auth/logout", h.sair)
+	mux.HandleFunc("GET /api/auth/eu", h.eu)
+	mux.HandleFunc("POST /api/gestor/usuarios", h.exigeGestor(h.criarGestor))
+	mux.HandleFunc("GET /api/lotes", h.listarLotes)
 	mux.HandleFunc("POST /api/lotes", h.enviarLote)
 	mux.HandleFunc("GET /api/lotes/{id}", h.obterLote)
 	mux.HandleFunc("GET /api/lotes/{id}/notas", h.listarNotas)
@@ -57,7 +67,7 @@ func NovoServidor(d Deps) http.Handler {
 	if d.Metricas != nil {
 		mux.Handle("GET /metrics", d.Metricas)
 	}
-	return observability.Middleware(d.Log, cors(d.CORSOrigens, recuperar(d.Log, mux)))
+	return observability.Middleware(d.Log, cors(d.CORSOrigens, recuperar(d.Log, h.autenticar(mux))))
 }
 
 func (h *Handlers) saude(w http.ResponseWriter, r *http.Request) {
@@ -116,8 +126,9 @@ func cors(origens []string, next http.Handler) http.Handler {
 		if o := r.Header.Get("Origin"); o != "" && slices.Contains(origens, o) {
 			w.Header().Set("Access-Control-Allow-Origin", o)
 			w.Header().Set("Vary", "Origin")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Idempotency-Key, X-Gestor-Senha, X-Request-Id")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key, X-Gestor-Senha, X-Request-Id")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 			w.Header().Set("Access-Control-Expose-Headers", "Location, Idempotent-Replay, X-Request-Id")
 			if r.Method == http.MethodOptions {
 				w.WriteHeader(http.StatusNoContent)

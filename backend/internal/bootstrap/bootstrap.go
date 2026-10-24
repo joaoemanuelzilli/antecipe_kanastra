@@ -18,6 +18,7 @@ import (
 	"antecipe/internal/repository/filesystem"
 	"antecipe/internal/repository/postgres"
 	"antecipe/internal/service/assignment"
+	"antecipe/internal/service/auth"
 	"antecipe/internal/service/batch"
 	"antecipe/internal/service/rulebook"
 )
@@ -30,6 +31,7 @@ type Ambiente struct {
 	ConfigPath  string
 	DataDir     string
 	GestorSenha string
+	GestorEmail string
 	CORSOrigens []string
 	TmpDir      string
 	Metricas    http.Handler // handler de /metrics do OpenTelemetry (opcional)
@@ -52,7 +54,7 @@ func AmbienteDoSistema() Ambiente {
 	return Ambiente{
 		HTTPAddr: env("HTTP_ADDR", ":8080"), DatabaseURL: os.Getenv("DATABASE_URL"), LogLevel: env("LOG_LEVEL", "info"),
 		ConfigPath: env("CONFIG_PATH", "config/antecipe.yaml"), DataDir: env("DATA_DIR", "data"),
-		GestorSenha: os.Getenv("GESTOR_SENHA"), CORSOrigens: origens, TmpDir: env("TMP_DIR", os.TempDir()),
+		GestorSenha: os.Getenv("GESTOR_SENHA"), GestorEmail: env("GESTOR_EMAIL", "gestor@antecipe.local"), CORSOrigens: origens, TmpDir: env("TMP_DIR", os.TempDir()),
 	}
 }
 
@@ -103,7 +105,17 @@ func Novo(ctx context.Context, amb Ambiente, log *slog.Logger) (*App, error) {
 		repo.Fechar()
 		return nil, err
 	}
+	contas := auth.Novo(repo, log)
+	gestorEmail := amb.GestorEmail
+	if gestorEmail == "" {
+		gestorEmail = "gestor@antecipe.local"
+	}
+	// sem conta de gestor a API ainda funciona (o header X-Gestor-Senha continua valendo): avisa e segue
+	if err := contas.GarantirGestorInicial(ctx, gestorEmail, amb.GestorSenha); err != nil {
+		log.WarnContext(ctx, "gestor inicial nao criado; use o header X-Gestor-Senha ou uma GESTOR_SENHA de ate 72 bytes", slog.String("erro", err.Error()))
+	}
 	h := rest.NovoServidor(rest.Deps{
+		Auth: contas, Config: cfg,
 		Lotes: lotes, Cessoes: assignment.Novo(repo, repo, repo, log), Regras: rulebook.Novo(repo, repo, lotes, cfg, log), Saude: repo.Ping, Metricas: amb.Metricas, Log: log,
 		GestorSenha: amb.GestorSenha, CORSOrigens: amb.CORSOrigens, TmpDir: amb.TmpDir,
 	})

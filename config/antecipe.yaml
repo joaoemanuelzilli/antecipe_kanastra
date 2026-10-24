@@ -12,3 +12,5 @@ processamento:
   situacao_cadastral_padrao: ATIVA
   jobs_simultaneos: 2
   tamanho_maximo_upload_mb: 300
+  # true: enviar e validar lotes passa a exigir conta (o curl anônimo deixa de funcionar)
+  exigir_login: false

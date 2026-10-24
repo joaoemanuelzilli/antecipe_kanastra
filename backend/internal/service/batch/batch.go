@@ -109,6 +109,7 @@ type Envio struct {
 	Hash           string
 	IdempotencyKey string
 	DataBase       *time.Time
+	UsuarioID      string // conta logada que enviou (vazio = anônimo)
 }
 
 // Enviar registra o lote (ou devolve o existente, se for reenvio) e o coloca na fila.
@@ -139,8 +140,9 @@ func (s *Servico) Enviar(ctx context.Context, e Envio) (id string, replay bool, 
 	if total == 0 {
 		return "", false, apperrors.Validation("ARQUIVO_VAZIO", "O arquivo não tem nenhuma nota.")
 	}
+	// a conta entra na impressão: o mesmo arquivo enviado por duas contas vira dois lotes (cada um vê só o seu)
 	h := sha256.Sum256([]byte(e.Hash + "|" + dataBase.Format("2006-01-02") + "|" + itoa(versao.Numero) + "|" +
-		prec.Metodo + "|" + prec.TaxaMensalPercentual.String() + "|" + itoa(prec.BaseDias)))
+		prec.Metodo + "|" + prec.TaxaMensalPercentual.String() + "|" + itoa(prec.BaseDias) + "|" + e.UsuarioID))
 	impressao := hex.EncodeToString(h[:])
 	chave := e.IdempotencyKey
 	if chave == "" {
@@ -148,6 +150,7 @@ func (s *Servico) Enviar(ctx context.Context, e Envio) (id string, replay bool, 
 	}
 	lc, err := s.d.Lotes.CriarLote(ctx, domain.NovoLote{
 		IdempotencyKey: chave, Impressao: impressao, Hash: e.Hash, DataBase: dataBase, RegrasVersao: versao.Numero, Precificacao: prec, LinhasTotal: total,
+		UsuarioID: e.UsuarioID,
 	})
 	if err != nil {
 		return "", false, err

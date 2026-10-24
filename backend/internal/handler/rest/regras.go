@@ -8,23 +8,34 @@ import (
 	"strconv"
 	"time"
 
+	"antecipe/internal/domain"
 	"antecipe/internal/domain/rules"
 	"antecipe/internal/platform/apperrors"
 	"antecipe/internal/service/message"
 )
 
-// exigeGestor protege as rotas que alteram regras. A senha nunca é logada.
+// exigeGestor protege as rotas do gestor: vale a sessão de uma conta gestor ou, por compatibilidade,
+// o header X-Gestor-Senha. A senha nunca é logada.
 func (h *Handlers) exigeGestor(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if h.d.GestorSenha == "" {
+		if u := usuarioDe(r); u != nil && u.Perfil == domain.PerfilGestor {
+			next(w, r)
+			return
+		}
+		senha := r.Header.Get("X-Gestor-Senha")
+		if senha != "" && h.d.GestorSenha != "" && subtle.ConstantTimeCompare([]byte(senha), []byte(h.d.GestorSenha)) == 1 {
+			next(w, r)
+			return
+		}
+		if u := usuarioDe(r); u != nil {
+			EscreverErro(w, r, h.d.Log, apperrors.New(http.StatusForbidden, "PERMISSAO_NEGADA", "Só o gestor do fundo pode fazer isso."))
+			return
+		}
+		if h.d.GestorSenha == "" && senha != "" {
 			EscreverErro(w, r, h.d.Log, apperrors.Unavailable("GESTOR_DESABILITADO", "A área do gestor está desligada (GESTOR_SENHA não configurada)."))
 			return
 		}
-		if subtle.ConstantTimeCompare([]byte(r.Header.Get("X-Gestor-Senha")), []byte(h.d.GestorSenha)) != 1 {
-			EscreverErro(w, r, h.d.Log, apperrors.Unauthorized("SENHA_INVALIDA", "Senha do gestor inválida."))
-			return
-		}
-		next(w, r)
+		EscreverErro(w, r, h.d.Log, apperrors.Unauthorized("SENHA_INVALIDA", "Entre com uma conta de gestor (ou envie a senha do gestor)."))
 	}
 }
 

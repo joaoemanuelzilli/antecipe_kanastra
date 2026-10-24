@@ -561,3 +561,32 @@ Meus lotes: cards e Novo envio compartilhados com a Dashboard; busca, situação
 
 **O que o time fez com a resposta:** _(preencher)_
 
+---
+
+## #23 · 24/10/2026 16:38 · Autenticação para os 2 tipos de usuário e criação de conta
+
+**Prompt (time → Claude Code):**
+
+> crie autenticação, para os 2 tipos de user, e tbm lógica pra criar conta
+
+**Perguntas da IA e respostas do time:**
+
+> **O login deve bloquear o uso sem conta?** → Login opcional (recomendada)
+>
+> **Como nascem as contas?** → Empresa se cadastra; gestor vem do .env (recomendada)
+>
+> **Telas de login e cadastro?** → "Eu faço o backend, o colega liga as telas"
+
+**O que a IA fez:** escreveu primeiro os testes de ponta a ponta (cadastro, login, logout, validação, gestor, visibilidade dos lotes, `exigir_login`) e viu todos falharem. Depois implementou:
+
+- tabelas `usuarios` e `sessoes` e a coluna `lotes.usuario_id` (migração `0004`);
+- serviço `auth`: senha com bcrypt, token aleatório de 32 bytes guardado só como hash SHA-256, sessão de 7 dias, mesma resposta para e-mail inexistente e senha errada, CNPJ da empresa validado pelos dígitos;
+- rotas `POST /api/auth/cadastro`, `/login`, `/logout`, `GET /api/auth/eu`, `GET /api/lotes` (meus lotes) e `POST /api/gestor/usuarios`. A sessão vai num cookie `HttpOnly` (o front não guarda token) ou em `Authorization: Bearer`;
+- o primeiro gestor nasce do `.env` (`GESTOR_EMAIL`, padrão `gestor@antecipe.local`, + `GESTOR_SENHA`); as rotas do gestor aceitam a sessão de gestor e continuam aceitando o `X-Gestor-Senha`;
+- login opcional: o fluxo anônimo segue igual; lote enviado logado fica só da conta e dos gestores (os outros recebem `404`); `exigir_login: true` no YAML obriga o login, e o `/api/config` avisa o front;
+- contrato `docs/api.md` v1.5 com a seção "Contas e login" para o colega ligar as telas.
+
+Suíte inteira verde, com o gabarito ainda 100%.
+
+**O que o time fez com a resposta:** _(preencher)_
+

@@ -26,10 +26,10 @@ func (r *Repo) CriarLote(ctx context.Context, n domain.NovoLote) (domain.LoteCri
 		return c, err
 	}
 	err = r.Pool.QueryRow(ctx, `
-		INSERT INTO lotes (idempotency_key, impressao, hash_arquivo, data_base, regras_versao, precificacao, status, linhas_total)
-		VALUES ($1, $2, $3, $4, $5, $6, 'na_fila', $7)
+		INSERT INTO lotes (idempotency_key, impressao, hash_arquivo, data_base, regras_versao, precificacao, status, linhas_total, usuario_id)
+		VALUES ($1, $2, $3, $4, $5, $6, 'na_fila', $7, $8)
 		ON CONFLICT (idempotency_key) DO NOTHING
-		RETURNING id`, n.IdempotencyKey, n.Impressao, n.Hash, n.DataBase, n.RegrasVersao, prec, n.LinhasTotal).Scan(&c.ID)
+		RETURNING id`, n.IdempotencyKey, n.Impressao, n.Hash, n.DataBase, n.RegrasVersao, prec, n.LinhasTotal, nuloSeVazio(n.UsuarioID)).Scan(&c.ID)
 	if err == nil {
 		return domain.LoteCriado{ID: c.ID, Criado: true, Status: domain.LoteNaFila, Impressao: n.Impressao}, nil
 	}
@@ -176,13 +176,13 @@ func (r *Repo) ObterLote(ctx context.Context, id string) (domain.Lote, error) {
 	err := r.Pool.QueryRow(ctx, `
 		SELECT l.id, l.idempotency_key, l.hash_arquivo, l.data_base, l.regras_versao, l.precificacao, l.status, l.etapa,
 		       l.linhas_total, l.linhas_processadas, l.totais, l.motivos, l.erros_configuracao, l.erro,
-		       l.criado_em, l.iniciado_em, l.concluido_em, l.duracao_ms,
+		       l.criado_em, l.iniciado_em, l.concluido_em, l.duracao_ms, COALESCE(l.usuario_id::text, ''),
 		       c.id, c.confirmada_em, c.notas_cedidas, c.face_centavos, c.desconto_centavos, c.liquido_centavos
 		FROM lotes l LEFT JOIN cessoes c ON c.lote_id = l.id
 		WHERE l.id = $1`, id).Scan(
 		&l.ID, &l.IdempotencyKey, &l.HashArquivo, &l.DataBase, &l.RegrasVersao, &prec, &l.Status, &etapa,
 		&l.LinhasTotal, &l.LinhasProcessadas, &totais, &motivos, &errosCfg, &erro,
-		&l.CriadoEm, &l.IniciadoEm, &l.ConcluidoEm, &l.DuracaoMs,
+		&l.CriadoEm, &l.IniciadoEm, &l.ConcluidoEm, &l.DuracaoMs, &l.UsuarioID,
 		&cID, &cEm, &cNotas, &cFace, &cDesc, &cLiq)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return l, errLoteNaoEncontrado

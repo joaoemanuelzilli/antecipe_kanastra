@@ -14,6 +14,10 @@ func (h *Handlers) ceder(w http.ResponseWriter, r *http.Request) {
 		EscreverErro(w, r, h.d.Log, apperrors.BadRequest("IDEMPOTENCY_KEY_INVALIDA", "A Idempotency-Key deve ter até 128 caracteres."))
 		return
 	}
+	if _, _, err := h.loteVisivel(r, r.PathValue("id")); err != nil {
+		EscreverErro(w, r, h.d.Log, err)
+		return
+	}
 	c, exc, replay, err := h.d.Cessoes.Ceder(r.Context(), r.PathValue("id"), chave)
 	if err != nil {
 		EscreverErro(w, r, h.d.Log, err)

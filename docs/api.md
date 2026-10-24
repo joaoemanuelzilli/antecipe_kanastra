@@ -51,10 +51,13 @@ Métricas do OpenTelemetry no formato Prometheus (lotes, notas avaliadas, duraç
 
 Dados para montar a tela inicial.
 
+`exigir_login` diz se enviar lotes exige conta (`config/antecipe.yaml`, padrão `false`). Com `true`, mande para a tela de login antes do upload.
+
 O método de preço padrão é **juros compostos** (`DESCONTO_COMPOSTO`) e pode virar `DESCONTO_SIMPLES` editando `config/antecipe.yaml`, sem reiniciar. Mostre sempre `precificacao.descricao` perto do valor (ex. "Juros compostos · 2% ao mês"), sem fixar o texto no front.
 
 ```json
 {
+  "exigir_login": false,
   "fundo": { "nome": "ANTECIPE FIDC", "cnpj": "92.234.400/0001-80" },
   "data_base_padrao": "2026-10-22",
   "regras_versao": 1,
@@ -360,13 +363,85 @@ Resposta `200`:
 
 ---
 
+## Contas e login
+
+Há dois perfis: **`empresa`** (envia lotes e vende notas) e **`gestor`** (mexe nas regras do fundo e vê todos os lotes).
+
+- A **empresa cria a própria conta** na tela de cadastro.
+- O **primeiro gestor vem do `.env`**: e-mail `GESTOR_EMAIL` (padrão `gestor@antecipe.local`) e senha `GESTOR_SENHA`. O `make up` mostra os dois no terminal. Um gestor logado cria outros gestores.
+- **Login é opcional.** Sem login, tudo funciona como antes (o `curl` dos jurados continua valendo). Lote enviado sem login fica visível para quem tiver o id. Lote enviado com login é **só da conta que enviou** (e dos gestores): para os outros, `404 LOTE_NAO_ENCONTRADO`.
+- Para obrigar o login no envio, ponha `exigir_login: true` em `config/antecipe.yaml`.
+
+**Como a sessão anda.** Cadastro e login devolvem o cookie `antecipe_sessao` (`HttpOnly`, `SameSite=Lax`, 7 dias). O navegador manda o cookie sozinho em toda chamada a `/api`, então o front **não guarda token nenhum**. No Vite em dev, a chamada passa pelo proxy (mesma origem), o que basta. Se chamar a API em outra origem, use `fetch(url, { credentials: 'include' })`. Quem integra direto pela API usa o `token` do login no header `Authorization: Bearer <token>`.
+
+**Ao abrir o app**, chame `GET /api/auth/eu`: `200` traz a conta logada; `401` quer dizer que não há sessão.
+
+### `POST /api/auth/cadastro`: criar conta de empresa
+
+```json
+{ "nome": "Ana Souza", "email": "ana@estofados.com.br", "senha": "senha-forte-123",
+  "empresa_nome": "Ana Estofados LTDA", "empresa_cnpj": "10.062.050/0001-57" }
+```
+
+`201`, já logado (cookie definido):
+
+```json
+{ "usuario": { "id": "5b1e…", "nome": "Ana Souza", "email": "ana@estofados.com.br", "perfil": "empresa",
+               "empresa_nome": "Ana Estofados LTDA", "empresa_cnpj": "10.062.050/0001-57",
+               "criado_em": "2026-10-24T16:40:00-03:00" } }
+```
+
+- O perfil é sempre `empresa`: um `perfil` enviado no corpo é ignorado.
+- O e-mail é guardado em minúsculas. O CNPJ pode vir com ou sem máscara e volta formatado.
+- Regras: nome de 2 a 100 caracteres; e-mail válido; senha de 8 a 72 caracteres; nome da empresa de 2 a 150 caracteres; CNPJ com dígitos verificadores válidos.
+- `422 CADASTRO_INVALIDO`, com um item em `detalhes` por campo errado: `{ "campo": "senha", "problema": "a senha precisa ter de 8 a 72 caracteres" }`. Mostre cada `problema` embaixo do seu campo.
+- `409 EMAIL_JA_CADASTRADO`: "Já existe uma conta com esse e-mail."
+
+### `POST /api/auth/login`
+
+```json
+{ "email": "ana@estofados.com.br", "senha": "senha-forte-123" }
+```
+
+`200 { "usuario": {…}, "token": "…", "expira_em": "…" }`, com o cookie definido. Vale para os dois perfis: use `usuario.perfil` para escolher a tela (`empresa` → envio de lotes; `gestor` → regras).
+
+`401 CREDENCIAIS_INVALIDAS`: "E-mail ou senha incorretos." A mensagem é a mesma para e-mail que não existe e para senha errada.
+
+### `POST /api/auth/logout`
+
+`204`. Apaga a sessão no servidor e o cookie.
+
+### `GET /api/auth/eu`
+
+`200 { "usuario": {…} }` ou `401 NAO_AUTENTICADO`.
+
+### `GET /api/lotes`: meus lotes
+
+Exige login (`401 NAO_AUTENTICADO` sem ele). A empresa vê os lotes dela; o gestor vê todos. Mais recentes primeiro, até 200.
+
+```json
+{ "lotes": [
+  { "id": "a3f…", "status": "concluido", "data_base": "2026-10-22",
+    "criado_em": "…", "concluido_em": "…", "cedido": false,
+    "totais": { "linhas": 23, "aprovadas": 13, "recusadas": 10, "face_centavos": 0, "desconto_centavos": 0, "liquido_centavos": 0 } }
+] }
+```
+
+`totais` segue o mesmo formato de `GET /api/lotes/{id}` e vem `null` enquanto o lote não termina. `cedido` diz se a venda já foi confirmada.
+
+### `POST /api/gestor/usuarios`: gestor cria outro gestor
+
+Só para gestor logado. Corpo `{ "nome", "email", "senha" }` (mesmas regras do cadastro). `201 { "usuario": { …, "perfil": "gestor" } }`. Uma conta `empresa` recebe `403 PERMISSAO_NEGADA`.
+
+---
+
 ## Regras e tela do gestor
 
-As rotas que alteram algo exigem o header **`X-Gestor-Senha`**. A senha é mostrada no terminal pelo `make up` e fica no `.env`. Guarde-a no `sessionStorage` depois do login.
+As rotas que alteram algo aceitam **a sessão de uma conta `gestor`** (o jeito novo: entrar com `GESTOR_EMAIL` + `GESTOR_SENHA`) ou, por compatibilidade, o header **`X-Gestor-Senha`** com a senha do `.env`. Uma conta `empresa` logada recebe `403 PERMISSAO_NEGADA`.
 
 ### `GET /api/gestor/verificar`
 
-Com o header `X-Gestor-Senha`: `204` se a senha estiver certa, `401 SENHA_INVALIDA` se não. É o que a tela de login usa.
+`204` se a sessão for de gestor ou o header `X-Gestor-Senha` estiver certo. `401 SENHA_INVALIDA` sem login e sem senha certa. `403 PERMISSAO_NEGADA` para conta `empresa`.
 
 ### `GET /api/regras`: versão publicada + catálogo para montar o formulário
 
@@ -517,6 +592,11 @@ O painel do assistente fala com outro serviço: o AgentOS, que **só o nginx alc
 ## Histórico do contrato
 
 - **v1 · 24/10/2026 11:00:** versão inicial.
+- **v1.5 · 24/10/2026 17:00:** contas e login (seção "Contas e login").
+  - Entram `POST /api/auth/cadastro`, `/login`, `/logout`, `GET /api/auth/eu`, `GET /api/lotes` e `POST /api/gestor/usuarios`.
+  - Login é opcional; lote enviado logado é só da conta (e dos gestores).
+  - As rotas do gestor aceitam a sessão de gestor, além do `X-Gestor-Senha`.
+  - `exigir_login` entra em `/api/config`.
 - **v1.4 · 24/10/2026 13:10:** a regra muda para bater com o gabarito oficial.
   - A data-base de cada nota passa a ser a `DATA_AQUISICAO` dela, quando houver: `dias`, prazo, vencimento e preço contam a partir dela.
   - A concentração fica estática e por fundo, e o texto vira "Com as notas deste lote, …".

@@ -32,6 +32,7 @@ up: .env ## Sobe Postgres, API e front (primeira vez: alguns minutos)
 	@echo "  Traces (Jaeger):  http://localhost:16686"
 	@echo "  Métricas:         http://localhost:8080/metrics"
 	@echo "  Assistente (IA):  http://localhost:3000/ai/assistente/status  (só via nginx)"
+	@echo "  Login do gestor:  $$(grep '^GESTOR_EMAIL=' .env | cut -d= -f2 | grep . || echo gestor@antecipe.local)"
 	@echo "  Senha do gestor:  $$(grep '^GESTOR_SENHA=' .env | cut -d= -f2)"
 	@echo ""
 	@grep -qE '^OPENROUTER_API_KEY=.+' .env || { echo "  Assistente de IA desligado: coloque OPENROUTER_API_KEY no .env e rode make up de novo."; echo ""; }

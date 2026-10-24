@@ -42,7 +42,9 @@ func (h *Handlers) config(w http.ResponseWriter, r *http.Request) {
 			p.FonteMetodo = "config/antecipe.yaml"
 		}
 	}
+	exigirLogin := h.d.Config != nil && h.d.Config.Obter().Processamento.ExigirLogin
 	EscreverJSON(w, http.StatusOK, map[string]any{
+		"exigir_login":     exigirLogin,
 		"fundo":            map[string]string{"nome": a.Versao.Regras.Fundo.Nome, "cnpj": a.Versao.Regras.Fundo.CNPJ},
 		"data_base_padrao": a.DataBase.Format("2006-01-02"),
 		"regras_versao":    a.Versao.Numero,
@@ -57,6 +59,10 @@ func (h *Handlers) config(w http.ResponseWriter, r *http.Request) {
 
 // enviarLote lê o multipart em fluxo, grava o arquivo em disco calculando o sha256 e entrega ao serviço.
 func (h *Handlers) enviarLote(w http.ResponseWriter, r *http.Request) {
+	if err := h.exigirLoginSeConfigurado(r); err != nil {
+		EscreverErro(w, r, h.d.Log, err)
+		return
+	}
 	a, err := h.d.Lotes.ConfiguracaoAtual(r.Context())
 	if err != nil {
 		EscreverErro(w, r, h.d.Log, err)
@@ -145,7 +151,14 @@ func (h *Handlers) enviarLote(w http.ResponseWriter, r *http.Request) {
 		EscreverErro(w, r, h.d.Log, apperrors.BadRequest("IDEMPOTENCY_KEY_INVALIDA", "A Idempotency-Key deve ter até 128 caracteres."))
 		return
 	}
-	id, replay, err := h.d.Lotes.Enviar(r.Context(), batch.Envio{CaminhoArquivo: caminho, Hash: hash, IdempotencyKey: chave, DataBase: dataBase})
+	dono := ""
+	if u := usuarioDe(r); u != nil {
+		dono = u.ID
+		if chave != "" {
+			chave = u.ID + ":" + chave // a Idempotency-Key do cliente vale dentro da conta dele
+		}
+	}
+	id, replay, err := h.d.Lotes.Enviar(r.Context(), batch.Envio{CaminhoArquivo: caminho, Hash: hash, IdempotencyKey: chave, DataBase: dataBase, UsuarioID: dono})
 	if err != nil {
 		EscreverErro(w, r, h.d.Log, err)
 		return
@@ -173,7 +186,7 @@ func erroDeLeitura(err error) error {
 }
 
 func (h *Handlers) obterLote(w http.ResponseWriter, r *http.Request) {
-	l, pos, err := h.d.Lotes.Obter(r.Context(), r.PathValue("id"))
+	l, pos, err := h.loteVisivel(r, r.PathValue("id"))
 	if err != nil {
 		EscreverErro(w, r, h.d.Log, err)
 		return
@@ -195,7 +208,7 @@ func filtroDe(r *http.Request) domain.FiltroNotas {
 
 func (h *Handlers) listarNotas(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	l, _, err := h.d.Lotes.Obter(r.Context(), id)
+	l, _, err := h.loteVisivel(r, id)
 	if err != nil {
 		EscreverErro(w, r, h.d.Log, err)
 		return
@@ -218,7 +231,7 @@ func (h *Handlers) listarNotas(w http.ResponseWriter, r *http.Request) {
 // baixarNotas devolve o resultado em CSV, em fluxo, com as células de texto neutralizadas contra fórmulas.
 func (h *Handlers) baixarNotas(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	if _, _, err := h.d.Lotes.Obter(r.Context(), id); err != nil {
+	if _, _, err := h.loteVisivel(r, id); err != nil {
 		EscreverErro(w, r, h.d.Log, err)
 		return
 	}
@@ -263,7 +276,7 @@ func (h *Handlers) baixarNotas(w http.ResponseWriter, r *http.Request) {
 // [{"linha":2,"id":"725714","status":"APROVADO"}, {"linha":3,"id":"…","status":"BARRADO","barrado_por":["…"]}]
 func (h *Handlers) baixarResultado(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	if _, _, err := h.d.Lotes.Obter(r.Context(), id); err != nil {
+	if _, _, err := h.loteVisivel(r, id); err != nil {
 		EscreverErro(w, r, h.d.Log, err)
 		return
 	}

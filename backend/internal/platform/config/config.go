@@ -32,6 +32,7 @@ type Processamento struct {
 	SituacaoCadastralPadrao string `yaml:"situacao_cadastral_padrao"`
 	JobsSimultaneos         int    `yaml:"jobs_simultaneos"`
 	TamanhoMaximoUploadMB   int    `yaml:"tamanho_maximo_upload_mb"`
+	ExigirLogin             bool   `yaml:"exigir_login"` // true: enviar e validar lotes exige conta
 }
 
 type Config struct {

@@ -35,6 +35,10 @@ type notaEntrada struct {
 
 // validar roda o mesmo motor dos lotes, sem gravar nada. Aceita JSON ou o próprio CSV.
 func (h *Handlers) validar(w http.ResponseWriter, r *http.Request) {
+	if err := h.exigirLoginSeConfigurado(r); err != nil {
+		EscreverErro(w, r, h.d.Log, err)
+		return
+	}
 	corpo, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 16<<20))
 	if err != nil {
 		EscreverErro(w, r, h.d.Log, erroDeLeitura(err))

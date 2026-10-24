@@ -17,6 +17,8 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Request-Id $request_id;
+        # repassa o https da borda (Railway) para a API marcar o cookie de sessão como Secure
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
         proxy_request_buffering off;
         proxy_buffering off;
         proxy_read_timeout 300s;

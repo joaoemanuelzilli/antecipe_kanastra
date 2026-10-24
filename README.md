@@ -51,8 +51,11 @@ No fim ele mostra:
   Traces (Jaeger):  http://localhost:16686
   Métricas:         http://localhost:8080/metrics
   Assistente (IA):  http://localhost:3000/ai/assistente/status  (só via nginx)
+  Login do gestor:  gestor@antecipe.local
   Senha do gestor:  <gerada no .env>
 ```
+
+**Contas.** Login é opcional: sem conta, tudo funciona (inclusive o `curl` abaixo). A empresa cria a própria conta na tela de cadastro, e os lotes que ela envia logada ficam visíveis só para ela e para o gestor. O primeiro gestor vem do `.env` (`GESTOR_EMAIL` + `GESTOR_SENHA`) e pode criar outros. Para obrigar o login no envio, ponha `exigir_login: true` em `config/antecipe.yaml`. Detalhes em [docs/api.md](docs/api.md#contas-e-login).
 
 O assistente de IA é opcional: sem `OPENROUTER_API_KEY` no `.env`, todo o resto funciona e o `make up` avisa que ele está desligado (veja [Assistente de IA](#assistente-de-ia)).
 
@@ -141,6 +144,13 @@ curl -H "Content-Type: text/csv" --data-binary @data/exemplo.csv http://localhos
 curl http://localhost:8080/api/regras
 curl -X POST -H "X-Gestor-Senha: <senha>" -d '{"regras": {...}}' http://localhost:8080/api/regras/previa
 curl -X PUT  -H "X-Gestor-Senha: <senha>" -d '{"regras": {...}, "autor": "Rafael"}' http://localhost:8080/api/regras
+
+# contas (opcional): criar conta de empresa, entrar e listar os próprios lotes
+curl -c sessao.txt -H "Content-Type: application/json" \
+  -d '{"nome":"Ana","email":"ana@x.com","senha":"senha-forte-123","empresa_nome":"Ana LTDA","empresa_cnpj":"10.062.050/0001-57"}' \
+  http://localhost:8080/api/auth/cadastro
+curl -b sessao.txt -F arquivo=@data/exemplo.csv http://localhost:8080/api/lotes
+curl -b sessao.txt http://localhost:8080/api/lotes
 ```
 
 ### Pela linha de comando (filosofia Unix)
