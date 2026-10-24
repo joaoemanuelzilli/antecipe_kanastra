@@ -7,9 +7,39 @@ export function LandingVideo() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    const pauseWhenHidden = () => { if (document.hidden) video.current?.pause(); };
-    document.addEventListener('visibilitychange', pauseWhenHidden);
-    return () => document.removeEventListener('visibilitychange', pauseWhenHidden);
+    const player = video.current;
+    if (!player || !('IntersectionObserver' in window)) return;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let visible = false;
+    let disposed = false;
+    player.defaultMuted = true;
+    player.muted = true;
+    const update = () => {
+      if (!visible || document.hidden || reducedMotion.matches) {
+        player.pause();
+        return;
+      }
+      if (player.ended) return;
+      void player.play().then(() => {
+        // A pending play request must not restart a video after leaving the section.
+        if (disposed || !visible || document.hidden || reducedMotion.matches) player.pause();
+      }).catch(() => { /* Manual play remains available if autoplay is blocked. */ });
+    };
+    const observer = new IntersectionObserver(entries => {
+      const entry = entries[0];
+      visible = entry.isIntersecting && entry.intersectionRatio >= .35;
+      update();
+    }, { threshold: [0, .35], rootMargin: '-84px 0px 0px 0px' });
+    observer.observe(player);
+    document.addEventListener('visibilitychange', update);
+    reducedMotion.addEventListener('change', update);
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', update);
+      reducedMotion.removeEventListener('change', update);
+      player.pause();
+    };
   }, []);
 
   async function play() {
@@ -25,7 +55,7 @@ export function LandingVideo() {
   return <section className="lp-video-section lp-section" id="apresentacao" aria-labelledby="lp-video-title">
     <div className="lp-video-heading"><h2 id="lp-video-title">Veja o Antecipe em ação.</h2><p>Do envio à decisão, em menos de um minuto.</p></div>
     <div className="lp-video-player">
-      <video ref={video} controls playsInline preload="none" poster="/media/antecipe-apresentacao.jpg" width="1920" height="1080" aria-label="Apresentação do Antecipe" aria-describedby="lp-video-caption" onPlay={() => setStarted(true)} onError={() => setError(true)}>
+      <video ref={video} controls muted playsInline preload="none" poster="/media/antecipe-apresentacao.jpg" width="1920" height="1080" aria-label="Apresentação do Antecipe" aria-describedby="lp-video-caption" onPlay={() => setStarted(true)} onError={() => setError(true)}>
         <source src="/media/antecipe-apresentacao.mp4" type="video/mp4" />
         Seu navegador não reproduz este vídeo. <a href="/media/antecipe-apresentacao.mp4">Abrir apresentação</a>.
       </video>
