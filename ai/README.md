@@ -116,7 +116,7 @@ for (;;) {
 }
 ```
 
-A documentação interativa do AgentOS fica em `http://localhost:3000/ai/docs` (pelo nginx).
+Pelo nginx só passam `GET /ai/assistente/status` e `POST /ai/agents/antecipe-assistente/runs`. O resto do AgentOS (`/sessions`, `/config`, `/docs`…) responde 404, para ninguém listar conversas alheias. A documentação interativa fica dentro da rede do compose (`http://ai:7777/docs`, exige a chave).
 
 ## Decisões
 

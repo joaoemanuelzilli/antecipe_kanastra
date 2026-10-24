@@ -298,5 +298,9 @@ Depois disso, a IA seguiu o plano até a Tarefa 13 (12:15):
 
 A correção 3 (separar as conversas por usuário) não foi aplicada, porque não foi pedida.
 
+**Complemento (revisão de segurança do commit):** o nginx injetava a chave em qualquer rota de `/ai/`, então quem alcançasse o front ainda usaria rotas internas como `/ai/sessions`. O nginx passou a liberar só `GET /ai/assistente/status` e `POST /ai/agents/antecipe-assistente/runs`.
+- Verificado no Docker: `/ai/sessions`, `/ai/config`, `/ai/docs` e `/ai/agents/...` respondem 404, e o `GET` em `.../runs` responde 403.
+- A sugestão de `:?` no compose ficou de fora de propósito: ela quebraria `make down` em `.env` antigos, e sem a chave o assistente continua fora do alcance externo, porque a porta está fechada.
+
 **O que o time fez com a resposta:** _(preencher)_
 
