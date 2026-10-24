@@ -1,0 +1,47 @@
+name: antecipe
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: antecipe
+      POSTGRES_DB: antecipe
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?rode make up para gerar o .env}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U antecipe -d antecipe"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: postgres://antecipe:${POSTGRES_PASSWORD}@postgres:5432/antecipe?sslmode=disable
+      GESTOR_SENHA: ${GESTOR_SENHA:?rode make up para gerar o .env}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CONFIG_PATH: /app/config/antecipe.yaml
+      DATA_DIR: /app/data
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+    volumes:
+      - ./config:/app/config:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

@@ -1,0 +1,14 @@
+# Configuração do comportamento do Antecipe. Segredos ficam no .env, nunca aqui.
+# A API relê este arquivo sozinha quando ele muda: vale para o próximo lote, sem reiniciar.
+precificacao:
+  metodo: DESCONTO_COMPOSTO        # DESCONTO_COMPOSTO | DESCONTO_SIMPLES
+  # taxa_mensal_percentual e base_dias vêm das regras publicadas (validadores_antecipe.json).
+  # Descomente para sobrescrever:
+  # taxa_mensal_percentual: 2.0
+  # base_dias: 30
+
+processamento:
+  data_base_padrao: "2026-10-22"
+  situacao_cadastral_padrao: ATIVA
+  jobs_simultaneos: 2
+  tamanho_maximo_upload_mb: 300
